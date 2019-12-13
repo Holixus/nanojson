@@ -20,7 +20,7 @@ struct jsn {
 		int32_t number;
 		char *string;
 		struct {
-			short nodes;
+			short first;
 			short length;
 		} object;
 	} data;
@@ -53,7 +53,7 @@ int json_number(jsn_t *node, int absent);
 char const *json_string(jsn_t *node, char const *absent);
 
 #define json_foreach(obj, index) \
-	for (int index = obj->data.object.nodes; index >= 0; index = obj[index].next)
+	for (int index = obj->data.object.first; index >= 0; index = obj[index].next)
 
 /*
 	json_foreach(obj, index) {

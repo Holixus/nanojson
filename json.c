@@ -74,6 +74,13 @@ static int after_space(char **p)
 
 
 /* ------------------------------------------------------------------------ */
+static int match_char(char **p, int ch)
+{
+	return after_space(p) == ch ? (++*p, 1) : 0;
+}
+
+
+/* ------------------------------------------------------------------------ */
 static int match_number(char **p, int32_t *num)
 {
 	char *s = *p;
@@ -270,14 +277,13 @@ _not_escape:;
 /* ------------------------------------------------------------------------ */
 static int match_json(jsn_parser_t *p, jsn_t *obj)
 {
-	char *s = p->ptr;
-	int open_char = after_space(&s);
+	int open_char = after_space(&p->ptr);
 	if (open_char != '[' && open_char != '{' ) {
+		char *s = p->ptr;
 		switch (open_char) {
 		case '"':
-			if (!match_string(&s, &obj->data.string))
+			if (!match_string(&p->ptr, &obj->data.string))
 				return errno = EINVAL, 0;
-			p->ptr = s;
 			return obj->type = JS_STRING;
 		case 'n':
 			if (s[1] != 'u' || s[2] != 'l' || s[3] != 'l' || is_id_char(s[4]))
@@ -297,62 +303,52 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 			obj->data.number = 0;
 			return obj->type = JS_BOOLEAN;
 		default:
-			if (!match_number(&s, &obj->data.number))
+			if (!match_number(&p->ptr, &obj->data.number))
 				return errno = EINVAL, 0;
-			p->ptr = s;
 			return obj->type = JS_NUMBER;
 		}
 	}
 
-	int is_object = *s == '{';
+	p->ptr += 1;
+
+	int is_object = open_char == '{';
 	int close_char = is_object ? '}' : ']';
-	++s;
 
 	int index = 0;
-	short *next = &obj->data.object.nodes;
+	short *next = &obj->data.object.first;
 
-	if (after_space(&s) == close_char)
+	if (match_char(&p->ptr, close_char))
 		goto _empty;
 
 	do {
-		after_space(&s);
+		after_space(&p->ptr);
 		jsn_t *node = jsn_alloc(p);
 		if (!node)
-			return errno = ENOMEM, 0;
+			return 0;
 		*next = (short)(node - obj);
 		if (is_object) {
-			p->ptr = s;
-			if (!match_string(&s, &node->id.string))
+			if (!match_string(&p->ptr, &node->id.string))
 				return errno = EINVAL, 0;
 			node->id_type = JS_STRING;
-			p->ptr = s;
-			if (after_space(&s) != ':')
+			if (!match_char(&p->ptr, ':'))
 				return errno = EINVAL, 0;
-			++s;
-			after_space(&s);
 		} else {
 			node->id.number = index;
 			node->id_type = JS_NUMBER;
 		}
 
-		p->ptr = s;
 		if (!match_json(p, node))
 			return 0;
 
-		s = p->ptr;
 		next = &node->next;
 		++index;
-		if (after_space(&s) != ',')
-			break;
-		++s;
-	} while (1);
+	} while (match_char(&p->ptr, ','));
 
-	if (after_space(&s) != close_char)
+	if (!match_char(&p->ptr,  close_char))
 		return errno = EINVAL, 0;
 
 _empty:
-	*next = -1;
-	p->ptr = s + 1;
+	*next = -1; // end of list
 	obj->data.object.length = index;
 	return obj->type = is_object ? JS_OBJECT : JS_ARRAY;
 }
@@ -369,12 +365,8 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 		.pool_size = size
 	};
 
-	jsn_t *root = jsn_alloc(&p);
-
-	if (!match_json(&p, root)) {
-		//printf("failed : <<<%s>>>\n", p.ptr);
-		return p.text - p.ptr;
-	}
+	if (!match_json(&p, jsn_alloc(&p)))
+		return p.text - p.ptr; // return negative offset to error
 
 	for (int i = 0; i < p.free_node_index; ++i) {
 		jsn_t *node = pool + i;
@@ -384,7 +376,7 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 			string_unescape(node->id.string);
 	}
 
-	return p.free_node_index;
+	return p.free_node_index; // return number of parsed js nodes (>0)
 }
 
 
@@ -468,28 +460,22 @@ char *json_stringify(char *p, char *e, jsn_t *root)
 		if (p < e) *p++ = '"';
 		break;
 	case JS_OBJECT:
-		if (p < e) *p++ = '{';
+	case JS_ARRAY:;
+		int is_object = root->type == JS_OBJECT;
+		if (p < e) *p++ = is_object ? '{' : '[';
 		json_foreach(root, index) {
 			jsn_t *node = root + index;
-			if (p < e) *p++ = '"';
-			p = string_escape(p, e, node->id.string);
-			if (p < e) *p++ = '"';
-			if (p < e) *p++ = ':';
+			if (is_object) {
+				if (p < e) *p++ = '"';
+				p = string_escape(p, e, node->id.string);
+				if (p < e) *p++ = '"';
+				if (p < e) *p++ = ':';
+			}
 			p = json_stringify(p, e, node);
 			if (node->next >= 0)
 				if (p < e) *p++ = ',';
 		}
-		if (p < e) *p++ = '}';
-		break;
-	case JS_ARRAY:
-		if (p < e) *p++ = '[';
-		json_foreach(root, index) {
-			jsn_t *node = root + index;
-			p = json_stringify(p, e, node);
-			if (node->next >= 0)
-				if (p < e) *p++ = ',';
-		}
-		if (p < e) *p++ = ']';
+		if (p < e) *p++ = is_object ? '}' : ']';
 		break;
 	}
 	if (p < e)

@@ -54,6 +54,12 @@ char const *json_string(jsn_t *node, char const *absent);
 
 #define json_foreach(obj, index) \
 	for (int index = obj->data.object.nodes; index >= 0; index = obj[index].next)
-		//jsn_t *node = obj + index;
+
+/*
+	json_foreach(obj, index) {
+		jsn_t *node = obj + index;
+		...
+	}
+*/
 
 #endif

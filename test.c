@@ -12,7 +12,7 @@ static char *jsontoa(char *a, size_t size, jsn_t *root)
 {
 	*a = 0;
 	if (root)
-		jsontostr(a, a + size, root);
+		json_stringify(a, a + size, root);
 	return a;
 }
 
@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
 
 	test_gets();
 
+	if (argc < 2)
+		return 0;
+
 	jsn_t json[100];
 	if (json_parse(json, 100, argv[1]) < 0) {
 		perror("json parse");
@@ -130,7 +133,7 @@ int main(int argc, char *argv[])
 	}
 	printf("ok\n");
 	char text[4096];
-	jsontostr(text, text + sizeof text, json);
+	json_stringify(text, text + sizeof text, json);
 	puts(text);
 	return 0;
 }

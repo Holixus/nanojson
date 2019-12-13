@@ -33,9 +33,11 @@ int string_unescape(char *s);
 char *string_escape(char *p, char *e, char const *s);
 
 
+/* main functions */
+
 int json_parse(jsn_t *pool, size_t size, /* <-- */ char *text);
 
-char *jsontostr(char *outbuf, char *end, /* <-- */ jsn_t *root);
+char *json_stringify(char *outbuf, char *end, /* <-- */ jsn_t *root);
 
 
 static inline int json_type(jsn_t *node) { return node->type; }

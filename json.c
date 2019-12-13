@@ -453,7 +453,7 @@ char const *json_string(jsn_t *node, char const *absent)
 
 
 /* ------------------------------------------------------------------------ */
-char *jsontostr(char *p, char *e, jsn_t *root)
+char *json_stringify(char *p, char *e, jsn_t *root)
 {
 	switch (root->type) {
 	case JS_NULL:
@@ -475,7 +475,7 @@ char *jsontostr(char *p, char *e, jsn_t *root)
 			p = string_escape(p, e, node->id.string);
 			if (p < e) *p++ = '"';
 			if (p < e) *p++ = ':';
-			p = jsontostr(p, e, node);
+			p = json_stringify(p, e, node);
 			if (node->next >= 0)
 				if (p < e) *p++ = ',';
 		}
@@ -485,7 +485,7 @@ char *jsontostr(char *p, char *e, jsn_t *root)
 		if (p < e) *p++ = '[';
 		json_foreach(root, index) {
 			jsn_t *node = root + index;
-			p = jsontostr(p, e, node);
+			p = json_stringify(p, e, node);
 			if (node->next >= 0)
 				if (p < e) *p++ = ',';
 		}

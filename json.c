@@ -324,14 +324,15 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 			p->ptr = s;
 			if (!match_string(&s, &node->id.string))
 				return errno = EINVAL, 0;
-			node->has_string_id = 1;
+			node->id_type = JS_STRING;
 			p->ptr = s;
 			if (after_space(&s) != ':')
 				return errno = EINVAL, 0;
 			++s;
 			after_space(&s);
 		} else {
-			node->id.index = index;
+			node->id.number = index;
+			node->id_type = JS_NUMBER;
 		}
 
 		p->ptr = s;
@@ -358,7 +359,7 @@ _empty:
 
 
 /* ------------------------------------------------------------------------ */
-int json_parse(char *text, jsn_t *pool, size_t size)
+int json_parse(jsn_t *pool, size_t size, char *text)
 {
 	jsn_parser_t p = {
 		.text = text,
@@ -379,7 +380,7 @@ int json_parse(char *text, jsn_t *pool, size_t size)
 		jsn_t *node = pool + i;
 		if (node->type == JS_STRING)
 			string_unescape(node->data.string);
-		if (node->has_string_id)
+		if (node->id_type == JS_STRING)
 			string_unescape(node->id.string);
 	}
 
@@ -405,7 +406,7 @@ jsn_t *json_cell(jsn_t *obj, int index)
 		return NULL;
 
 	json_foreach(obj, index)
-		if (index == obj[index].id.index)
+		if (index == obj[index].id.number)
 			return obj + index;
 
 	return NULL;
@@ -415,7 +416,7 @@ jsn_t *json_cell(jsn_t *obj, int index)
 /* ------------------------------------------------------------------------ */
 int json_length(jsn_t *obj)
 {
-	return obj->type == JS_ARRAY || obj->type == JS_OBJECT ? obj->data.object.length : 0;
+	return obj->type >= JS_ARRAY ? obj->data.object.length : 0;
 }
 
 

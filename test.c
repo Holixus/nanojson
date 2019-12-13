@@ -47,7 +47,7 @@ static int test_ok(char const *source, char const *expected)
 	jsn_t json[100];
 	memset(json, 0, sizeof json);
 	char *text = strdup(source);
-	int p = json_parse(text, json, 100);
+	int p = json_parse(json, 100, text);
 	if (p < 0) {
 		free(text);
 		printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
@@ -87,7 +87,7 @@ static int test_gets()
 	printf("test_gets\n");
 
 	jsn_t json[100];
-	int len = json_parse(text, json, 100);
+	int len = json_parse(json, 100, text);
 	if (len < 0) {
 		perror("json_obj_scan parse");
 		free(text);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 	test_gets();
 
 	jsn_t json[100];
-	if (json_parse(argv[1], json, 100) < 0) {
+	if (json_parse(json, 100, argv[1]) < 0) {
 		perror("json parse");
 		return 1;
 	}

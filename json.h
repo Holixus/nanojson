@@ -3,16 +3,17 @@
 
 
 typedef
-enum { JS_FAIL, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_STRING, JS_ARRAY, JS_OBJECT } nj_type_t;
+enum {
+	JS_FAIL, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_STRING, JS_ARRAY, JS_OBJECT
+} nj_type_t;
 
-typedef struct nj_node jsn_t;
-
-struct nj_node {
+typedef
+struct jsn {
 	union {
 		char *string;
-		uint32_t index;
+		uint32_t number;
 	} id;
-	char has_string_id;
+	char id_type;
 	char type;
 	short next;
 	union {
@@ -23,15 +24,18 @@ struct nj_node {
 			short length;
 		} object;
 	} data;
-} __attribute__((packed));
+} __attribute__((packed)) jsn_t;
 
+
+/* internal but may be usefull functions */
 
 int string_unescape(char *s);
 char *string_escape(char *p, char *e, char const *s);
 
-int json_parse(char *text, jsn_t *pool, size_t size);
 
-char *jsontostr(char *p, char *e, jsn_t *root);
+int json_parse(jsn_t *pool, size_t size, /* <-- */ char *text);
+
+char *jsontostr(char *outbuf, char *end, /* <-- */ jsn_t *root);
 
 
 static inline int json_type(jsn_t *node) { return node->type; }

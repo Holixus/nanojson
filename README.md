@@ -35,7 +35,7 @@ static int test_gets()
 		jsn_t *params       =             json_item(node, "params");
 
 		printf("[%d]: version: %s, id: %d, method: %s, params: %s\n",
-		       i, version, id, method, jsontoa(ser, sizeof ser, params));
+		       i, version, id, method, json_stringify(ser, sizeof ser, params));
 		++i;
 	}
 	free(text);
@@ -53,7 +53,10 @@ enum {
 } nj_type_t;
 
 
-int json_parse(jsn_t *pool, size_t size, /* <-- */ char *text);
+int json_parse(jsn_t *pool, size_t size,  /* <-- */ char *text);
+
+int json_stringify(char *out, size_t size,/* <-- */ jsn_t *root);
+
 
 int json_type(jsn_t *node);
 
@@ -66,7 +69,7 @@ jsn_t *json_item(jsn_t *node, char const *id);
 jsn_t *json_cell(jsn_t *node, int index);
 
 int json_number(jsn_t *node, int missed_value);
-char const *json_string(jsn_t *node, char const *missed_value);
+
 
 /*
 	json_foreach(obj, index) {

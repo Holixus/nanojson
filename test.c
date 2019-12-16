@@ -8,15 +8,6 @@
 
 
 /* ------------------------------------------------------------------------ */
-static char *jsontoa(char *a, size_t size, jsn_t *root)
-{
-	*a = 0;
-	if (root)
-		json_stringify(a, a + size, root);
-	return a;
-}
-
-/* ------------------------------------------------------------------------ */
 static char *fails[] = {
 #ifndef JSON_HEX_NUMBERS
 	"0x5"
@@ -39,7 +30,7 @@ static int test_fail(char const *source)
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
-	jsontoa(result, length - 5, json);
+	json_stringify(result, length - 5, json);
 
 	char src[length];
 	string_escape(src, src + length - 5, source);
@@ -129,7 +120,7 @@ static int test_ok(char const *source, char const *expected)
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
-	jsontoa(result, length - 5, json);
+	json_stringify(result, length - 5, json);
 
 	if (!strcmp(result, expected)) {
 		//printf("[OK]\n");
@@ -180,7 +171,7 @@ static int test_gets()
 		jsn_t *params       =             json_item(node, "params");
 
 		printf("[%d]: version: %s, id: %d, method: %s, params: %s\n",
-			i, version, id, method, jsontoa(ser, sizeof ser, params));
+			i, version, id, method, json_stringify(ser, sizeof ser, params));
 		++i;
 	}
 	free(text);
@@ -214,7 +205,6 @@ int main(int argc, char *argv[])
 	}
 	printf("ok\n");
 	char text[4096];
-	json_stringify(text, text + sizeof text, json);
-	puts(text);
+	puts(json_stringify(text, sizeof text, json));
 	return 0;
 }

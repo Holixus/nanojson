@@ -508,7 +508,7 @@ char const *json_string(jsn_t *node, char const *absent)
 
 
 /* ------------------------------------------------------------------------ */
-char *json_stringify(char *p, char *e, jsn_t *root)
+static char *json_to_str(char *p, char *e, jsn_t *root)
 {
 	switch (root->type) {
 	case JS_NULL:
@@ -534,7 +534,7 @@ char *json_stringify(char *p, char *e, jsn_t *root)
 				if (p < e) *p++ = '"';
 				if (p < e) *p++ = ':';
 			}
-			p = json_stringify(p, e, node);
+			p = json_to_str(p, e, node);
 			if (node->next >= 0)
 				if (p < e) *p++ = ',';
 		}
@@ -546,3 +546,12 @@ char *json_stringify(char *p, char *e, jsn_t *root)
 	return p;
 }
 
+
+/* ------------------------------------------------------------------------ */
+char *json_stringify(char *out, size_t size, jsn_t *root)
+{
+	*out = 0;
+	if (root)
+		json_to_str(out, out + size - 1, root);
+	return out;
+}

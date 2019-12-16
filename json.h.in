@@ -1,6 +1,8 @@
 #ifndef NANO_JSON_H
 #define NANO_JSON_H
 
+#cmakedefine JSON_FLOATS
+#cmakedefine JSON_HEX_NUMBERS
 
 typedef
 enum {

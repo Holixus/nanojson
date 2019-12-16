@@ -81,7 +81,39 @@ static int match_char(char **p, int ch)
 
 
 /* ------------------------------------------------------------------------ */
-static int match_number(char **p, int32_t *num)
+static int match_number(char **p, jsn_t *obj)
+{
+	char *s = *p;
+
+#ifdef JSON_HEX_NUMBERS
+	char *e = s;
+	long int n = strtol(s, &e, 0);
+	if (e == s)
+		return 0;
+	obj->data.number = n;
+	*p = e;
+#else
+	int sign = 0;
+	if (*s == '-')
+		sign = 1, ++s;
+
+	if (*s < '0' || '9' < *s)
+		return 0;
+
+	int32_t n = 0;
+	do {
+		n = n * 10 + *s++ - '0';
+	} while ('0' <= *s && *s <= '9');
+	obj->data.number = sign ? -n : n;
+	*p = s;
+#endif
+	return obj->type = JS_NUMBER;
+}
+
+
+#ifdef FLOATS_SUPPORT
+/* ------------------------------------------------------------------------ */
+static int match_float(char **p, double *floating)
 {
 	char *s = *p;
 
@@ -99,9 +131,10 @@ static int match_number(char **p, int32_t *num)
 
 	*num = sign ? -n : n;
 	*p = s;
-	return 1;
+	return obj->type = JS_FLOAT;
 }
 
+#endif
 
 /* ------------------------------------------------------------------------ */
 static int hextonibble(char digit)
@@ -160,6 +193,8 @@ int string_unescape(char *s)
 						}
 				} break;
 			default:
+				if (!*s)
+					goto _fail;
 				goto _not_escape;
 			}
 		} else
@@ -170,7 +205,7 @@ _not_escape:
 		*d = 0;
 		return 1;
 	}
-
+_fail:
 	return 0;
 }
 
@@ -184,7 +219,7 @@ char *string_escape(char *p, char *e, char const *s)
 		if (32 <= c && c <= 127) {
 			switch (c) {
 			case '"':
-			case '/':
+			//case '/':
 			case '\\':
 				*p++ = '\\';
 			}
@@ -236,9 +271,7 @@ static int match_string(char **p, char **str)
 	if (*s != '"')
 		return 0;
 
-	*str = ++s;
-
-	for (; *s && *s != '"'; ++s) {
+	for (++s; *s && *s != '"'; ++s) {
 		if (*s == '\\') {
 			switch (*++s) {
 			case '"':
@@ -261,12 +294,14 @@ static int match_string(char **p, char **str)
 					s += 4;
 				} break;
 			default:
+				--s;
 				goto _not_escape;
 			}
 		} else
 _not_escape:;
 	}
 	if (*s == '"') {
+		*str = *p + 1;
 		*p = s + 1;
 		return 1;
 	}
@@ -303,9 +338,9 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 			obj->data.number = 0;
 			return obj->type = JS_BOOLEAN;
 		default:
-			if (!match_number(&p->ptr, &obj->data.number))
+			if (!match_number(&p->ptr, obj))
 				return errno = EINVAL, 0;
-			return obj->type = JS_NUMBER;
+			return obj->type;
 		}
 	}
 
@@ -367,6 +402,9 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 
 	if (!match_json(&p, jsn_alloc(&p)))
 		return p.text - p.ptr; // return negative offset to error
+
+	if (after_space(&p.ptr))
+		return errno = EMSGSIZE, p.text - p.ptr;
 
 	for (int i = 0; i < p.free_node_index; ++i) {
 		jsn_t *node = pool + i;
@@ -437,8 +475,33 @@ char const *json_string(jsn_t *node, char const *absent)
 	if (!node)
 		return absent;
 
-	if (node->type == JS_STRING)
+	static char bufs[16][12];
+	static int i = 0;
+
+	switch (node->type) {
+	case JS_NULL:
+		return "null";
+
+	case JS_BOOLEAN:
+		return node->data.number ? "true" : "false";
+
+	case JS_NUMBER:;
+		int num = node->data.number;
+		char *buf = bufs[i++ & 15] + 12;
+		*--buf = 0;
+		if (num < 0)
+			num = -num;
+		do {
+			*--buf = num % 10 + '0';
+			num = num / 10;
+		} while (num);
+		if (node->data.number < 0)
+			*--buf = '-';
+		return buf;
+
+	case JS_STRING:
 		return node->data.string;
+	}
 
 	return NULL;
 }

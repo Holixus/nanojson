@@ -79,19 +79,23 @@ static int match_char(char **p, int ch)
 	return after_space(p) == ch ? (++*p, 1) : 0;
 }
 
+#ifdef JSON_64BITS_INTEGERS
+#define JSN_NUMBER_FORMAT "%li"
+#else
+#define JSN_NUMBER_FORMAT "%d"
+#endif
+
 
 /* ------------------------------------------------------------------------ */
-static int match_number(char **p, jsn_t *obj)
+static jsn_number_t str2num(char *s, char **e)
 {
-	char *s = *p;
-
 #ifdef JSON_HEX_NUMBERS
-	char *e = s;
-	long int n = strtol(s, &e, 0);
-	if (e == s)
-		return 0;
-	obj->data.number = n;
-	*p = e;
+#ifdef JSON_64BITS_INTEGERS
+	return strtoll(s, e, 0);
+#else
+	return strtol(s, e, 0);
+#endif
+
 #else
 	int sign = 0;
 	if (*s == '-')
@@ -100,18 +104,30 @@ static int match_number(char **p, jsn_t *obj)
 	if (*s < '0' || '9' < *s)
 		return 0;
 
-	int32_t n = 0;
+	jsn_number_t n = 0;
 	do {
 		n = n * 10 + *s++ - '0';
 	} while ('0' <= *s && *s <= '9');
-	obj->data.number = sign ? -n : n;
-	*p = s;
+
+	if (e) *e = s;
+
+	return sign ? -n : n;
 #endif
+}
+
+/* ------------------------------------------------------------------------ */
+static int match_number(char **p, jsn_t *obj)
+{
+	char *s = *p;
+	jsn_number_t n = str2num(s, p);
+	if (*p == s)
+		return 0;
+	obj->data.number = n;
 	return obj->type = JS_NUMBER;
 }
 
 
-#ifdef FLOATS_SUPPORT
+#ifdef JSON_FLOATS
 /* ------------------------------------------------------------------------ */
 static int match_float(char **p, double *floating)
 {
@@ -451,32 +467,79 @@ int json_length(jsn_t *obj)
 
 
 /* ------------------------------------------------------------------------ */
-int json_number(jsn_t *node, int absent)
+int json_boolean(jsn_t *node, int absent)
 {
 	if (!node)
 		return absent;
 
 	switch (node->type) {
-	case JS_NUMBER:
-	case JS_BOOLEAN:
-		return node->data.number;
 	case JS_NULL:
 		return 0;
+	case JS_BOOLEAN:
+	case JS_NUMBER:
+		return node->data.number ? 1 : 0;
+#ifdef JSON_FLOATS
+	case JS_FLOAT:
+		return round(node->data.floating) ? 1 : 0;
+#endif
 	case JS_STRING:
-		return atoi(node->data.string);
+		return node->data.string[0] ? 1 : 0;
+	case JS_ARRAY:
+	case JS_OBJECT:
+		return 1;
 	}
 	return absent;
 }
 
 
 /* ------------------------------------------------------------------------ */
-char const *json_string(jsn_t *node, char const *absent)
+jsn_number_t json_number(jsn_t *node, jsn_number_t absent)
 {
 	if (!node)
 		return absent;
 
-	static char bufs[16][12];
+	switch (node->type) {
+	case JS_NULL:
+		return 0;
+	case JS_BOOLEAN:
+	case JS_NUMBER:
+		return node->data.number;
+#ifdef JSON_FLOATS
+	case JS_FLOAT:
+		return round(node->data.floating);
+#endif
+	case JS_STRING:
+		return str2num(node->data.string, NULL);
+	case JS_ARRAY:
+		if (node->data.object.length == 1)
+			return json_number(node + node->data.object.first, absent);
+	case JS_OBJECT:
+		return 0;
+	}
+	return absent;
+}
+
+
+#ifdef JSON_64BITS_INTEGERS
+#define NSB_LENGTH 16
+#else
+#define NSB_LENGTH 32
+#endif
+#define NSB_NUM    16 /* should be degree of 2 ( 2,4,8,16,32...) */
+
+/* ------------------------------------------------------------------------ */
+static char *get_number_string_buffer()
+{
+	static char bufs[NSB_NUM][NSB_LENGTH/* string length */];
 	static int i = 0;
+	return bufs[i++ & (NSB_NUM-1)];
+}
+
+/* ------------------------------------------------------------------------ */
+char const *json_string(jsn_t *node, char const *absent)
+{
+	if (!node)
+		return absent;
 
 	switch (node->type) {
 	case JS_NULL:
@@ -486,9 +549,10 @@ char const *json_string(jsn_t *node, char const *absent)
 		return node->data.number ? "true" : "false";
 
 	case JS_NUMBER:;
+		char *buf = get_number_string_buffer() + NSB_LENGTH;
+		snprintf(buf, NSB_LENGTH, JSN_NUMBER_FORMAT, node->data.number);
+		/**--buf = 0;
 		int num = node->data.number;
-		char *buf = bufs[i++ & 15] + 12;
-		*--buf = 0;
 		if (num < 0)
 			num = -num;
 		do {
@@ -496,14 +560,26 @@ char const *json_string(jsn_t *node, char const *absent)
 			num = num / 10;
 		} while (num);
 		if (node->data.number < 0)
-			*--buf = '-';
+			*--buf = '-';*/
 		return buf;
+
+#ifdef JSON_FLOATS
+	case JS_FLOAT:
+		char *buf = get_number_string_buffer() + NSB_LENGTH;
+		snprintf(buf, NSB_LENGTH, "%E", node->data.floating);
+		return buf;
+#endif
 
 	case JS_STRING:
 		return node->data.string;
+
+	case JS_ARRAY:
+		return "[object Array]";
+	case JS_OBJECT:
+		return "[object Object]";
 	}
 
-	return NULL;
+	return absent;
 }
 
 
@@ -516,7 +592,7 @@ static char *json_to_str(char *p, char *e, jsn_t *root)
 	case JS_BOOLEAN:
 		return p + snprintf(p, (size_t)(e-p), root->data.number ? "true" : "false");
 	case JS_NUMBER:
-		return p + snprintf(p, (size_t)(e-p), "%d", root->data.number);
+		return p + snprintf(p, (size_t)(e-p), JSN_NUMBER_FORMAT, root->data.number);
 	case JS_STRING:
 		if (p < e) *p++ = '"';
 		p = string_escape(p, e, root->data.string);

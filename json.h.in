@@ -2,12 +2,20 @@
 #define NANO_JSON_H
 
 #cmakedefine JSON_FLOATS
+#cmakedefine JSON_64BITS_INTEGERS
 #cmakedefine JSON_HEX_NUMBERS
 
 typedef
 enum {
 	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
+
+#ifdef JSON_64BITS_INTEGERS
+typedef int64_t jsn_number_t;
+#else
+typedef int32_t jsn_number_t;
+#endif
+
 
 typedef
 struct jsn {
@@ -19,7 +27,7 @@ struct jsn {
 	char type;
 	short next;
 	union {
-		int32_t number;
+		jsn_number_t number;
 		char *string;
 		struct {
 			short first;
@@ -39,7 +47,7 @@ char *string_escape(char *p, char *e, char const *s);
 
 int json_parse(jsn_t *pool, size_t size, /* <-- */ char *text);
 
-char *json_stringify(char *outbuf, char *end, /* <-- */ jsn_t *root);
+char *json_stringify(char *outbuf, size_t, /* <-- */ jsn_t *root);
 
 
 static inline int json_type(jsn_t *node) { return node->type; }
@@ -51,7 +59,8 @@ int json_length(jsn_t *node);
 jsn_t *json_item(jsn_t *node, char const *id);
 jsn_t *json_cell(jsn_t *node, int index);
 
-int json_number(jsn_t *node, int absent);
+int json_boolean(jsn_t *node, int absent);
+jsn_number_t json_number(jsn_t *node, jsn_number_t absent);
 char const *json_string(jsn_t *node, char const *absent);
 
 #define json_foreach(obj, index) \

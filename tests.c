@@ -49,6 +49,11 @@ static char *good[] = {
 	," \"\\b\\f\\n\\r\\u0001\\t\"", "\"\\b\\f\\n\\r\\u0001\\t\""
 	,"1", "1"
 	,"-1", "-1"
+#ifdef JSON_64BITS_INTEGERS
+	,"100000000000", "100000000000"
+#else
+	,"100000000000", "1215752192"
+#endif
 #ifdef JSON_HEX_NUMBERS
 	,"0x40", "64"
 	,"-0x100", "-256"
@@ -178,6 +183,167 @@ static int test_gets()
 	return 0;
 }
 
+
+/* ------------------------------------------------------------------------ */
+static int test_boolean()
+{
+	static const struct {
+		char const *text;
+		int number;
+	} samples[] = {
+		 { "0", 0 }
+		,{ "1", 1 }
+		,{ "555", 1 }
+		,{ "null", 0 }
+		,{ "true", 1 }
+		,{ "false", 0 }
+		,{ "\"\"", 0 }
+		,{ "\"123\"", 1 }
+#ifdef JSON_64BITS_INTEGERS
+		,{ "100000000000", 1 }
+#else
+		,{ "4294967296", 0 }
+		,{ "100000000000", 1 }
+#endif
+#ifdef JSON_HEX_NUMBERS
+		,{ "\"0x123\"", 1 }
+#endif
+		,{ "[]", 1 }
+		,{ "[1]", 1 }
+		,{ "{}", 1 }
+	};
+
+	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
+		char text[256];
+		char const *source = samples[i].text;
+		jsn_t json[5];
+		strcpy(text, source);
+		int p = json_parse(json, sizeof json / sizeof json[0], text);
+		if (p <= 0)
+			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+
+		int result = json_boolean(json, 0);
+		int expected = samples[i].number;
+		if (result == expected) {
+			//printf("[OK]\n");
+			continue;
+		}
+
+		printf("<<<%s>>> -> %d but expected %d [FAILED] // json_number\n", source, result, expected);
+		return 0;
+	}
+
+	return 1;
+}
+
+
+/* ------------------------------------------------------------------------ */
+static int test_number()
+{
+	static const struct {
+		char const *text;
+		jsn_number_t number;
+	} samples[] = {
+		 { "0", 0 }
+		,{ "1", 1 }
+		,{ "555", 555 }
+		,{ "null", 0 }
+		,{ "true", 1 }
+		,{ "false", 0 }
+		,{ "\"\"", 0 }
+		,{ "\"123\"", 123 }
+#ifdef JSON_64BITS_INTEGERS
+		,{ "100000000000", 100000000000 }
+#else
+		,{ "4294967296", 0 }
+		,{ "100000000000", 1215752192 }
+#endif
+#ifdef JSON_HEX_NUMBERS
+		,{ "\"0x123\"", 291 }
+#endif
+		,{ "[]", 0 }
+		,{ "[1]", 1 }
+		,{ "{}", 0 }
+	};
+
+	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
+		char text[256];
+		char const *source = samples[i].text;
+		jsn_t json[5];
+		strcpy(text, source);
+		int p = json_parse(json, sizeof json / sizeof json[0], text);
+		if (p <= 0)
+			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+
+		int result = json_number(json, 0);
+		int expected = samples[i].number;
+		if (result == expected) {
+			//printf("[OK]\n");
+			continue;
+		}
+
+		printf("<<<%s>>> -> %d but expected %d [FAILED] // json_number\n", source, result, expected);
+		return 0;
+	}
+
+	return 1;
+}
+
+
+/* ------------------------------------------------------------------------ */
+static int test_string()
+{
+	static const struct {
+		char const *text;
+		char const *string;
+	} samples[] = {
+		 { "0", "0" }
+		,{ "1", "1" }
+		,{ "555", "555" }
+		,{ "null", "null" }
+		,{ "true", "true" }
+		,{ "false", "false" }
+		,{ "\"\"", "" }
+		,{ "\"123\"", "123" }
+#ifdef JSON_64BITS_INTEGERS
+		,{ "100000000000", "100000000000" }
+#else
+		,{ "4294967296",   "0" }
+		,{ "100000000000", "1215752192" }
+#endif
+#ifdef JSON_HEX_NUMBERS
+		,{ "0x123", "291" }
+		,{ "\"0x123\"", "0x123" }
+#endif
+		,{ "[]",  "[object Array]" }
+		,{ "[1]", "[object Array]" }
+		,{ "{}",  "[object Object]" }
+	};
+
+	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
+		char text[256];
+		char const *source = samples[i].text;
+		jsn_t json[5];
+		strcpy(text, source);
+		int p = json_parse(json, sizeof json / sizeof json[0], text);
+		if (p <= 0)
+			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+
+		char const *result = json_string(json, 0);
+		char const *expected = samples[i].string;
+		if (!strcmp(result, expected)) {
+			//printf("[OK]\n");
+			continue;
+		}
+
+		printf("<<<%s>>> -> \"%s\" but expected \"%s\" [FAILED] // json_string\n", source, result, expected);
+		return 0;
+	}
+
+	return 1;
+}
+
+
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
@@ -192,6 +358,18 @@ int main(int argc, char *argv[])
 		if (!test_ok(good[i], good[i + 1]))
 			return -1;
 	}
+
+	printf("Test json_boolean()\n");
+	if (!test_boolean())
+		return -1;
+
+	printf("Test json_number()\n");
+	if (!test_number())
+		return -1;
+
+	printf("Test json_string()\n");
+	if (!test_string())
+		return -1;
 
 	test_gets();
 

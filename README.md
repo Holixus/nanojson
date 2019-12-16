@@ -1,6 +1,23 @@
 # nanojson
 A small footprint(code and memory) simple JSON parsing C library for embedded projects
 
+Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
+
+
+## Build
+
+```
+# cmake .
+# make
+```
+
+
+### Build options
+
+* `JSON_64BITS_INTEGERS` "Enable support of 64 bits integers"
+* `JSON_HEX_NUMBERS` "Enabled support of 0x integers"
+
+
 ## Usage examples
 
 ```c
@@ -68,7 +85,9 @@ int json_length(jsn_t *node);
 jsn_t *json_item(jsn_t *node, char const *id);
 jsn_t *json_cell(jsn_t *node, int index);
 
+int json_boolean(jsn_t *node, int missed_value);
 int json_number(jsn_t *node, int missed_value);
+char const *json_string(jsn_t *node, char const *missed_value);
 
 
 /*

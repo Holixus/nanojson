@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(nanojson)
 
 OPTION(JSON_FLOATS "Enabled support of floating point numbers" OFF)
-OPTION(JSON_HEX_NUMBERS "Support 0x integers" OFF)
+OPTION(JSON_64BITS_INTEGERS "Enable support of 64 bits integers" OFF)
+OPTION(JSON_HEX_NUMBERS "Enabled support of 0x integers" OFF)
 
 ADD_DEFINITIONS(-pipe --std=gnu99 -ftabstop=4 -Wno-unused-function)
 ADD_DEFINITIONS(-Wall -Wmissing-declarations -Winit-self -Wswitch-enum -Wundef)
@@ -13,20 +14,20 @@ ADD_DEFINITIONS(-D_GNU_SOURCE)
 
 configure_file(json.h.in json.h @ONLY)
 
-ADD_EXECUTABLE(test test.c)
+ADD_EXECUTABLE(tests tests.c)
 ADD_LIBRARY(${CMAKE_PROJECT_NAME} STATIC json.c)
 
-TARGET_LINK_LIBRARIES(test ${CMAKE_PROJECT_NAME})
+TARGET_LINK_LIBRARIES(tests ${CMAKE_PROJECT_NAME})
 
 IF(HOST_DEBUG)
 	ADD_DEFINITIONS(-O0 -g3)
 ELSE()
 	ADD_DEFINITIONS(-Os -Werror -fvisibility=hidden -ffast-math -fmerge-all-constants -ffunction-sections -fdata-sections)
-	SET_TARGET_PROPERTIES(test PROPERTIES LINK_FLAGS -Wl,--gc-sections)
+	SET_TARGET_PROPERTIES(tests PROPERTIES LINK_FLAGS -Wl,--gc-sections)
 	SET_TARGET_PROPERTIES(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS -Wl,--gc-sections)
 ENDIF()
 
-INSTALL(TARGETS ${CMAKE_PROJECT_NAME} test
+INSTALL(TARGETS ${CMAKE_PROJECT_NAME} tests
 	ARCHIVE DESTINATION lib
 	LIBRARY DESTINATION lib
 	RUNTIME DESTINATION bin

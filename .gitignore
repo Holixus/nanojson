@@ -2,5 +2,6 @@
 /CMakeCache.txt
 /cmake_install.cmake
 /CMakeFiles/
-/test
+/tests
 /*.a
+/json.h

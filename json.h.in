@@ -7,7 +7,7 @@
 
 typedef
 enum {
-	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_STRING, JS_ARRAY, JS_OBJECT
+	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
 
 #ifdef JSON_64BITS_INTEGERS
@@ -29,6 +29,9 @@ struct jsn {
 	union {
 		jsn_number_t number;
 		char *string;
+#ifdef JSON_FLOATS
+		double floating;
+#endif
 		struct {
 			short first;
 			short length;
@@ -63,12 +66,16 @@ int json_boolean(jsn_t *node, int absent);
 jsn_number_t json_number(jsn_t *node, jsn_number_t absent);
 char const *json_string(jsn_t *node, char const *absent);
 
-#define json_foreach(obj, index) \
-	for (int index = obj->data.object.first; index >= 0; index = obj[index].next)
+#ifdef JSON_FLOATS
+double json_float(jsn_t *node, double absent);
+#endif
+
+#define json_foreach(obj, offset) \
+	for (int offset = obj->data.object.first; offset >= 0; offset = obj[offset].next)
 
 /*
-	json_foreach(obj, index) {
-		jsn_t *node = obj + index;
+	json_foreach(obj, offset) {
+		jsn_t *node = obj + offset;
 		...
 	}
 */

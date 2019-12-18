@@ -9,12 +9,16 @@
 
 /* ------------------------------------------------------------------------ */
 static char *fails[] = {
-#ifndef JSON_HEX_NUMBERS
-	"0x5"
-	,"0xccf",
-#endif
 	"0b1"
+	,"00xccf"
 	,"\"sdfdsf\\\""
+#ifndef JSON_HEX_NUMBERS
+	,"0x5"
+	,"0xccf"
+#endif
+#ifndef JSON_FLOATS
+	,"1.1"
+#endif
 };
 
 /* ------------------------------------------------------------------------ */
@@ -108,7 +112,7 @@ static char *good[] = {
       }\n\
    ]\n"
 	,"[{\"precision\":\"zip\",\"Latitude\":37.7668,\"Longitude\":-122.3959,\"Address\":\"\",\"City\":\"SAN FRANCISCO\",\"State\":\"CA\",\"Zip\":\"94107\",\"Country\":\"US\"},"
-	 "{\"precision\":\"zip\",\"Latitude\":37.371991,\"Longitude\":-122.026020,\"Address\":\"\",\"City\":\"SUNNYVALE\",\"State\":\"CA\",\"Zip\":\"94085\",\"Country\":\"US\"}]"
+	 "{\"precision\":\"zip\",\"Latitude\":37.371991,\"Longitude\":-122.02602,\"Address\":\"\",\"City\":\"SUNNYVALE\",\"State\":\"CA\",\"Zip\":\"94085\",\"Country\":\"US\"}]"
 #endif
 };
 
@@ -261,6 +265,10 @@ static int test_number()
 #ifdef JSON_HEX_NUMBERS
 		,{ "\"0x123\"", 291 }
 #endif
+#ifdef JSON_FLOATS
+		,{ "\"1.1\"", 1 }
+		,{ "1e4", 10000 }
+#endif
 		,{ "[]", 0 }
 		,{ "[1]", 1 }
 		,{ "{}", 0 }
@@ -290,6 +298,61 @@ static int test_number()
 }
 
 
+#ifdef JSON_FLOATS
+/* ------------------------------------------------------------------------ */
+static int test_float()
+{
+	static const struct {
+		char const *text;
+		double floating;
+	} samples[] = {
+		 { "0", 0.d }
+		,{ "1", 1.d }
+		,{ "555", 555.d }
+		,{ "null", 0.d }
+		,{ "true", 1.d }
+		,{ "false", 0.d }
+		,{ "\"\"", 0.d }
+		,{ "\"123\"", 123.d }
+#ifdef JSON_64BITS_INTEGERS
+		,{ "100000000000", 100000000000.d }
+#else
+		,{ "100000000000", 1215752192.d }
+#endif
+		,{ "1e4", 1e4 }
+#ifdef JSON_HEX_NUMBERS
+		,{ "\"0x123\"", 291.d }
+#endif
+		,{ "[]", 0.d }
+		,{ "[1]", 1.d }
+		,{ "{}", 0.d }
+	};
+
+	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
+		char text[256];
+		char const *source = samples[i].text;
+		jsn_t json[5];
+		strcpy(text, source);
+		int p = json_parse(json, sizeof json / sizeof json[0], text);
+		if (p <= 0)
+			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+
+		double result = json_float(json, 0.d);
+		double expected = samples[i].floating;
+		if (result == expected) {
+			//printf("[OK]\n");
+			continue;
+		}
+
+		printf("<<<%s>>> -> %f but expected %f [FAILED] // json_float\n", source, result, expected);
+		return 0;
+	}
+
+	return 1;
+}
+#endif
+
+
 /* ------------------------------------------------------------------------ */
 static int test_string()
 {
@@ -314,6 +377,9 @@ static int test_string()
 #ifdef JSON_HEX_NUMBERS
 		,{ "0x123", "291" }
 		,{ "\"0x123\"", "0x123" }
+#endif
+#ifdef JSON_FLOATS
+		,{ "1.1", "1.1" }
 #endif
 		,{ "[]",  "[object Array]" }
 		,{ "[1]", "[object Array]" }
@@ -366,6 +432,12 @@ int main(int argc, char *argv[])
 	printf("Test json_number()\n");
 	if (!test_number())
 		return -1;
+
+#ifdef JSON_FLOATS
+	printf("Test json_float()\n");
+	if (!test_float())
+		return -1;
+#endif
 
 	printf("Test json_string()\n");
 	if (!test_string())

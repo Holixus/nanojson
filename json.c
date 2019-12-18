@@ -146,14 +146,14 @@ int string_unescape(char *s)
 	for (; *s && *s != '"'; ++s) {
 		if (*s == '\\') {
 			switch (*++s) {
-			case '"': *d++ = '"'; break;
-			case '/': *d++ = '/'; break;
-			case '\\':*d++ = '\\'; break;
-			case 'b': *d++ = '\b'; break;
-			case 'f': *d++ = '\f'; break;
-			case 'n': *d++ = '\n'; break;
-			case 'r': *d++ = '\r'; break;
-			case 't': *d++ = '\t'; break;
+			case '"': *d++ = '"'; continue;
+			case '/': *d++ = '/'; continue;
+			case '\\':*d++ = '\\'; continue;
+			case 'b': *d++ = '\b'; continue;
+			case 'f': *d++ = '\f'; continue;
+			case 'n': *d++ = '\n'; continue;
+			case 'r': *d++ = '\r'; continue;
+			case 't': *d++ = '\t'; continue;
 			case 'u': {
 					uint32_t uc = 0;
 					for (int i = 1; i < 5; ++i) {
@@ -176,21 +176,17 @@ int string_unescape(char *s)
 							*d++ = 0x80 | (0x3F & uc >> 6);
 							*d++ = 0x80 | (0x3F & uc);
 						}
-				} break;
+				} continue;
 			default:
 				if (!*s)
 					goto _fail;
-				goto _not_escape;
 			}
-		} else
+		}
 _not_escape:
-			*d++ = *s;
-	}
-	if (*s == '"') {
-		*d = 0;
-		return 1;
+		*d++ = *s;
 	}
 _fail:
+	*d = 0;
 	return 0;
 }
 

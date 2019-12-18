@@ -16,6 +16,7 @@ Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
 
 * `JSON_64BITS_INTEGERS` "Enable support of 64 bits integers"
 * `JSON_HEX_NUMBERS` "Enabled support of 0x integers"
+* `JSON_FLOATS` "Enable support of Floating point Numbers"
 
 
 ## Usage examples
@@ -66,7 +67,7 @@ static int test_gets()
 ```c
 typedef
 enum {
-	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_STRING, JS_ARRAY, JS_OBJECT
+	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
 
 
@@ -87,6 +88,9 @@ jsn_t *json_cell(jsn_t *node, int index);
 
 int json_boolean(jsn_t *node, int missed_value);
 int json_number(jsn_t *node, int missed_value);
+
+double json_float(jsn_t *node, double missed_value);
+
 char const *json_string(jsn_t *node, char const *missed_value);
 
 

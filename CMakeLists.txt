@@ -12,7 +12,7 @@ ADD_DEFINITIONS(-Wmissing-field-initializers -Wredundant-decls -Wpointer-arith)
 
 ADD_DEFINITIONS(-D_GNU_SOURCE)
 
-configure_file(json.h.in json.h @ONLY)
+configure_file(nano/json.h.in nano/json.h @ONLY)
 
 ADD_EXECUTABLE(tests tests.c)
 ADD_LIBRARY(${CMAKE_PROJECT_NAME} STATIC parser.c methods.c stringify.c)

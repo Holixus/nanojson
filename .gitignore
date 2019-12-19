@@ -4,4 +4,4 @@
 /CMakeFiles/
 /tests
 /*.a
-/json.h
+/nano/json.h

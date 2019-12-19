@@ -6,7 +6,7 @@
 #include "string.h"
 #include "errno.h"
 
-#include "json.h"
+#include "nano/json.h"
 
 /* ------------------------------------------------------------------------ */
 char *string_escape(char *p, char *e, char const *s)

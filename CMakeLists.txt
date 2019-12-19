@@ -26,9 +26,10 @@ ENDIF()
 IF(HOST_DEBUG)
 	ADD_DEFINITIONS(-O0 -g3)
 ELSE()
-	ADD_DEFINITIONS(-Os -Werror -fvisibility=hidden -ffast-math -fmerge-all-constants -ffunction-sections -fdata-sections)
-	SET_TARGET_PROPERTIES(tests PROPERTIES LINK_FLAGS -Wl,--gc-sections)
-	SET_TARGET_PROPERTIES(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS -Wl,--gc-sections)
+	ADD_DEFINITIONS(-Os -Werror -ffast-math -fmerge-all-constants -ffunction-sections -fdata-sections -fno-asynchronous-unwind-tables)
+	SET_TARGET_PROPERTIES(tests PROPERTIES COMPILE_FLAGS -fvisibility=hidden)
+	SET_TARGET_PROPERTIES(tests PROPERTIES LINK_FLAGS -Wl,--gc-sections,--build-id=none)
+	SET_TARGET_PROPERTIES(${CMAKE_PROJECT_NAME} PROPERTIES LINK_FLAGS -Wl,--gc-sections,--build-id=none)
 ENDIF()
 
 INSTALL(TARGETS ${CMAKE_PROJECT_NAME} tests

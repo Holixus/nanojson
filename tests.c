@@ -49,7 +49,7 @@ static char *good[] = {
 	"  null  ", "null"
 	," true   ", "true"
 	,"false   ", "false"
-	,"  \"as123dfg\"  ", "\"as123dfg\""
+	,"  \"as\\\\123dfg\"  ", "\"as\\\\123dfg\""
 	," \"\\b\\f\\n\\r\\u0001\\t\"", "\"\\b\\f\\n\\r\\u0001\\t\""
 	,"1", "1"
 	,"-1", "-1"
@@ -136,13 +136,13 @@ static int test_ok(char const *source, char const *expected)
 		free(result);
 		return 1;
 	} else {
-		char src[length];
+		//char src[length];
 		//char res[strlen(result) * 3 + 10];
 		//char str[strlen(result) * 3 + 10];
-		string_escape(src, src + length - 5, source);
+		//string_escape(src, src + length - 5, source);
 		//string_escape(res, res + sizeof res - 5, result);
 		//string_escape(str, str + sizeof str - 5, expected);
-		printf("<<<%s>>> -> <%s>[%d]\n but expected <%s> [FAILED] // serializing\n", src, result, p, expected);
+		printf("<<<%s>>> -> <%s>[%d]\n but expected <%s> [FAILED] // serializing\n", source, result, p, expected);
 	}
 	free(result);
 	return 0;
@@ -368,6 +368,7 @@ static int test_string()
 		,{ "false", "false" }
 		,{ "\"\"", "" }
 		,{ "\"123\"", "123" }
+		,{ "\"1\\23\"", "123" }
 #ifdef JSON_64BITS_INTEGERS
 		,{ "100000000000", "100000000000" }
 #else
@@ -443,6 +444,7 @@ int main(int argc, char *argv[])
 	if (!test_string())
 		return -1;
 
+/*
 	test_gets();
 
 	if (argc < 2)
@@ -455,6 +457,6 @@ int main(int argc, char *argv[])
 	}
 	printf("ok\n");
 	char text[4096];
-	puts(json_stringify(text, sizeof text, json));
+	puts(json_stringify(text, sizeof text, json));*/
 	return 0;
 }

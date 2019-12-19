@@ -18,9 +18,8 @@ NULL     null
 
 SPACE    '\032' | '\r' | '\n' | '\t'
 
-number   [-]? [0-9]+
+number   [-]? [0-9]+ ('.' [0-9]* ([Ee] [0-9]+)? )?
 
-double
 string   '"' ( '\' ( ["\/bfnrt] | u[0-9A-Fa-f]{4} ) | [^\] ) * '"'
 
 array    '[' (json (',' json)*)? ']'
@@ -31,16 +30,17 @@ json     object | array | TRUE | FALSE | NULL | number | string
 
 */
 
-typedef struct jsn_parser jsn_parser_t;
 
 /* ------------------------------------------------------------------------ */
+typedef
 struct jsn_parser {
-	char *text;
-	char *ptr;
-	jsn_t *pool;
-	size_t free_node_index;
-	size_t pool_size;
-};
+	char *text;       /* source text */
+	char *ptr;        /* current parser position */
+
+	jsn_t *pool;            /* array of json nodes */
+	size_t free_node_index; /* index of first free node */
+	size_t pool_size;       /* total array size */
+} jsn_parser_t;
 
 
 /* ------------------------------------------------------------------------ */
@@ -60,7 +60,7 @@ static int is_id_char(int c)
 	if (c < 'A')
 		return '0' <= c && c <= '9';
 	if (c >= 'a')
-		return (c <= 'z') || c == '_';
+		return c <= 'z' || c == '_';
 	return c <= 'Z';
 }
 

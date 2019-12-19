@@ -1,14 +1,20 @@
 #ifndef NANO_JSON_H
 #define NANO_JSON_H
 
+/* ------------------------------------------------------------------------ */
 #cmakedefine JSON_FLOATS
 #cmakedefine JSON_64BITS_INTEGERS
 #cmakedefine JSON_HEX_NUMBERS
+
+#ifdef JSON_FLOATS
+#include "math.h"
+#endif
 
 typedef
 enum {
 	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
+
 
 #ifdef JSON_64BITS_INTEGERS
 typedef int64_t jsn_number_t;
@@ -17,15 +23,18 @@ typedef int32_t jsn_number_t;
 #endif
 
 
+/* ------------------------------------------------------------------------ */
+/* JSON node                                                                */
+
 typedef
 struct jsn {
 	union {
-		char *string;
-		uint32_t number;
+		char *string;    /* string id of the node in object    */
+		uint32_t number; /* integer index of the node in array */
 	} id;
-	char id_type;
-	char type;
-	short next;
+	char id_type;        /* type of id. JS_NUMBER(in array) or JS_STRING(in object)    */
+	char type;           /* type of data (nj_type_t)                                   */
+	short next;          /* index offset to next sibling node (0 - parent node offset) */
 	union {
 		jsn_number_t number;
 		char *string;
@@ -33,42 +42,49 @@ struct jsn {
 		double floating;
 #endif
 		struct {
-			short first;
-			short length;
-		} object;
+			short first; /* offset to first object/array element. for empty object it equals -1. in other cases = 1. */
+			short length;/* number of object/array elements */
+		} object;        /* object/array data */
 	} data;
 } __attribute__((packed)) jsn_t;
 
 
-/* internal but may be usefull functions */
 
-int string_unescape(char *s);
-char *string_escape(char *p, char *e, char const *s);
-
-
-/* main functions */
+/* ------------------------------------------------------------------------ */
+/* main functions                                                           */
 
 int json_parse(jsn_t *pool, size_t size, /* <-- */ char *text);
 
 char *json_stringify(char *outbuf, size_t, /* <-- */ jsn_t *root);
 
 
+
+/* ------------------------------------------------------------------------ */
+/* node functions                                                           */
+
 static inline int json_type(jsn_t *node) { return node->type; }
+
 static inline int is_json_object(jsn_t *node) { return node->type == JS_OBJECT; }
 static inline int is_json_array(jsn_t *node) { return node->type == JS_ARRAY; }
 
-int json_length(jsn_t *node);
-
-jsn_t *json_item(jsn_t *node, char const *id);
-jsn_t *json_cell(jsn_t *node, int index);
-
-int json_boolean(jsn_t *node, int absent);
-jsn_number_t json_number(jsn_t *node, jsn_number_t absent);
-char const *json_string(jsn_t *node, char const *absent);
+int          json_boolean(jsn_t *node, int absent);
+jsn_number_t json_number (jsn_t *node, jsn_number_t absent);
+char const  *json_string (jsn_t *node, char const *absent);
 
 #ifdef JSON_FLOATS
-double json_float(jsn_t *node, double absent);
+double       json_float  (jsn_t *node, double absent);
 #endif
+
+
+
+/* ------------------------------------------------------------------------ */
+/* array/object functions                                                   */
+
+int json_length(jsn_t *obj);
+
+jsn_t *json_item(jsn_t *obj, char const *id);
+jsn_t *json_cell(jsn_t *obj, int index);
+
 
 #define json_foreach(obj, offset) \
 	for (int offset = obj->data.object.first; offset >= 0; offset = obj[offset].next)
@@ -79,5 +95,30 @@ double json_float(jsn_t *node, double absent);
 		...
 	}
 */
+
+
+
+/* ------------------------------------------------------------------------ */
+/* internal but may be usefull functions                                    */
+
+int string_unescape(char *s);
+char *string_escape(char *p, char *e, char const *s);
+
+int match_number(char **p, jsn_t *obj);
+
+#ifdef JSON_FLOATS
+char *float2str(char *p, char *e, double f);
+#endif
+
+
+#ifdef JSON_64BITS_INTEGERS
+#define JSN_NUMBER_FORMAT "%li"
+#else
+#define JSN_NUMBER_FORMAT "%d"
+#endif
+#ifdef JSON_FLOATS
+#define JSN_FLOAT_FORMAT "%.11f"
+#endif
+
 
 #endif

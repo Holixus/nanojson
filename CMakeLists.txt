@@ -15,7 +15,7 @@ ADD_DEFINITIONS(-D_GNU_SOURCE)
 configure_file(json.h.in json.h @ONLY)
 
 ADD_EXECUTABLE(tests tests.c)
-ADD_LIBRARY(${CMAKE_PROJECT_NAME} STATIC json.c)
+ADD_LIBRARY(${CMAKE_PROJECT_NAME} STATIC parser.c methods.c stringify.c)
 
 TARGET_LINK_LIBRARIES(tests ${CMAKE_PROJECT_NAME})
 

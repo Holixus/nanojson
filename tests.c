@@ -29,7 +29,7 @@ static int test_fail(char const *source)
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
 		free(text);
-		//printf("[OK]\n");
+		//printf("    [OK]\n");
 		return 1;
 	}
 	size_t length = strlen(source) * 3 + 10;
@@ -38,8 +38,31 @@ static int test_fail(char const *source)
 
 	char src[length];
 	string_escape(src, src + length - 5, source);
-	printf("<<<%s>>> -> <%s>[%d]\n but is should be FAILED\n", src, result, p);
+	printf("    <<<%s>>> -> <%s>[%d]\n but is should be FAILED\n", src, result, p);
 	free(result);
+	return 0;
+}
+
+
+/* ------------------------------------------------------------------------ */
+static int test_auto_fail(char const *source)
+{
+	char *text = strdup(source);
+	jsn_t *json = json_auto_parse(text, NULL);
+	if (!json) {
+		free(text);
+		//printf("    [OK]\n");
+		return 1;
+	}
+	size_t length = strlen(source) * 3 + 10;
+	char *result = malloc(length);
+	json_stringify(result, length - 5, json);
+
+	char src[length];
+	string_escape(src, src + length - 5, source);
+	printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", src, result);
+	free(result);
+	free(json);
 	return 0;
 }
 
@@ -124,7 +147,7 @@ static int test_ok(char const *source, char const *expected)
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
 		free(text);
-		printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
+		printf("    <<<%s>>> [FAILED] // parsing %d\n", source, -p);
 		return 0;
 	}
 	size_t length = strlen(source) * 3 + 10;
@@ -132,21 +155,80 @@ static int test_ok(char const *source, char const *expected)
 	json_stringify(result, length - 5, json);
 
 	if (!strcmp(result, expected)) {
-		//printf("[OK]\n");
+		//printf("    [OK]\n");
 		free(result);
 		return 1;
 	} else {
-		//char src[length];
-		//char res[strlen(result) * 3 + 10];
-		//char str[strlen(result) * 3 + 10];
-		//string_escape(src, src + length - 5, source);
-		//string_escape(res, res + sizeof res - 5, result);
-		//string_escape(str, str + sizeof str - 5, expected);
-		printf("<<<%s>>> -> <%s>[%d]\n but expected <%s> [FAILED] // serializing\n", source, result, p, expected);
+		printf("    <<<%s>>> -> <%s>[%d]\n but expected <%s> [FAILED] // serializing\n", source, result, p, expected);
 	}
 	free(result);
 	return 0;
 }
+
+
+/* ------------------------------------------------------------------------ */
+static int test_auto_ok(char const *source, char const *expected)
+{
+	char *text = strdup(source), *end;
+	jsn_t *json = json_auto_parse(text, &end);
+	if (!json) {
+		free(text);
+		printf("    <<<%s>>> [FAILED] // parsing %d\n", source, (int)(end - text));
+		return 0;
+	}
+	size_t length = strlen(source) * 3 + 10;
+	char *result = malloc(length);
+	json_stringify(result, length - 5, json);
+
+	if (!strcmp(result, expected)) {
+		//printf("    [OK]\n");
+		free(result);
+		return 1;
+	} else {
+		printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", source, result, expected);
+	}
+	free(result);
+	free(json);
+	return 0;
+}
+
+
+/* ------------------------------------------------------------------------ */
+static int test_json_parse()
+{
+	printf("  Test BROKEN samples\n");
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 2) {
+		if (!test_fail(fails[i]))
+			return 0;
+	}
+
+	printf("  Test CORRECT samples\n");
+	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2) {
+		if (!test_ok(good[i], good[i + 1]))
+			return 0;
+	}
+	return 1;
+}
+
+
+/* ------------------------------------------------------------------------ */
+static int test_json_auto_parse()
+{
+	printf("  Test BROKEN samples\n");
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 2) {
+		if (!test_auto_fail(fails[i]))
+			return 0;
+	}
+
+	printf("  Test CORRECT samples\n");
+	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2) {
+		if (!test_auto_ok(good[i], good[i + 1]))
+			return 0;
+	}
+	return 1;
+}
+
+
 
 /* ------------------------------------------------------------------------ */
 static int test_gets()
@@ -414,17 +496,13 @@ static int test_string()
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
-	printf("Test BROKEN samples\n");
-	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 2) {
-		if (!test_fail(fails[i]))
-			return -1;
-	}
+	printf("Test json_parse()\n");
+	if (!test_json_parse())
+		return -1;
 
-	printf("Test CORRECT samples\n");
-	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2) {
-		if (!test_ok(good[i], good[i + 1]))
-			return -1;
-	}
+	printf("Test json_auto_parse()\n");
+	if (!test_json_auto_parse())
+		return -1;
 
 	printf("Test json_boolean()\n");
 	if (!test_boolean())

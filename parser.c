@@ -28,9 +28,10 @@ json     object | array | TRUE | FALSE | NULL | number | string
 
 */
 
+typedef
+struct jsn_parser jsn_parser_t;
 
 /* ------------------------------------------------------------------------ */
-typedef
 struct jsn_parser {
 	char *text;       /* source text */
 	char *ptr;        /* current parser position */
@@ -38,18 +39,9 @@ struct jsn_parser {
 	jsn_t *pool;            /* array of json nodes */
 	size_t free_node_index; /* index of first free node */
 	size_t pool_size;       /* total array size */
-} jsn_parser_t;
 
-
-/* ------------------------------------------------------------------------ */
-static jsn_t *jsn_alloc(jsn_parser_t *p)
-{
-	if (p->free_node_index >= p->pool_size)
-		return errno = ENOMEM, NULL;
-	jsn_t *j = p->pool + p->free_node_index++;
-	memset(j, 0, sizeof *j);
-	return j;
-}
+	jsn_t *(* alloc)(jsn_parser_t *p);
+};
 
 
 /* ------------------------------------------------------------------------ */
@@ -273,7 +265,7 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 
 	do {
 		after_space(&p->ptr);
-		jsn_t *node = jsn_alloc(p);
+		jsn_t *node = p->alloc(p);
 		if (!node)
 			return 0;
 		*next = (short)(node - obj);
@@ -306,6 +298,38 @@ _empty:
 
 
 /* ------------------------------------------------------------------------ */
+static int basic_parse(jsn_parser_t *p)
+{
+	if (!match_json(p, p->alloc(p)))
+		return p->text - p->ptr; // return negative offset to error
+
+	if (after_space(&p->ptr))
+		return errno = EMSGSIZE, p->text - p->ptr;
+
+	for (int i = 0; i < p->free_node_index; ++i) {
+		jsn_t *node = p->pool + i;
+		if (node->type == JS_STRING)
+			string_unescape(node->data.string);
+		if (node->id_type == JS_STRING)
+			string_unescape(node->id.string);
+	}
+
+	return p->free_node_index; // return number of parsed js nodes (>0)
+}
+
+
+/* ------------------------------------------------------------------------ */
+static jsn_t *jsn_alloc(jsn_parser_t *p)
+{
+	if (p->free_node_index >= p->pool_size)
+		return errno = ENOMEM, NULL;
+	jsn_t *j = p->pool + p->free_node_index++;
+	memset(j, 0, sizeof *j);
+	return j;
+}
+
+
+/* ------------------------------------------------------------------------ */
 int json_parse(jsn_t *pool, size_t size, char *text)
 {
 	jsn_parser_t p = {
@@ -313,23 +337,67 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 		.ptr = text,
 		.pool = pool,
 		.free_node_index = 0,
-		.pool_size = size
+		.pool_size = size,
+		.alloc = jsn_alloc
 	};
 
-	if (!match_json(&p, jsn_alloc(&p)))
-		return p.text - p.ptr; // return negative offset to error
+	return basic_parse(&p);
+}
 
-	if (after_space(&p.ptr))
-		return errno = EMSGSIZE, p.text - p.ptr;
 
-	for (int i = 0; i < p.free_node_index; ++i) {
-		jsn_t *node = pool + i;
-		if (node->type == JS_STRING)
-			string_unescape(node->data.string);
-		if (node->id_type == JS_STRING)
-			string_unescape(node->id.string);
+/* ------------------------------------------------------------------------ */
+static jsn_t *jsn_realloc(jsn_parser_t *p)
+{
+	if (p->free_node_index >= p->pool_size) {
+		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * (p->pool_size + 32));
+		if (!p->pool)
+			return errno = ENOMEM, NULL;
+		p->pool = pool;
 	}
+	jsn_t *j = p->pool + p->free_node_index++;
+	memset(j, 0, sizeof *j);
+	return j;
+}
 
-	return p.free_node_index; // return number of parsed js nodes (>0)
+
+/* ------------------------------------------------------------------------ */
+static int jsn_free_tail(jsn_parser_t *p)
+{
+	if (p->free_node_index < p->pool_size) {
+		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * p->free_node_index);
+		if (!p->pool)
+			return errno = ENOMEM, -1;
+		p->pool = pool;
+	}
+	return 0;
+}
+
+
+#define START_POOL_SIZE (16)
+
+/* ------------------------------------------------------------------------ */
+jsn_t *json_auto_parse(char *text, char **end)
+{
+	jsn_parser_t p = {
+		.text = text,
+		.ptr = text,
+		.free_node_index = 0,
+		.pool_size = START_POOL_SIZE,
+		.pool = malloc(START_POOL_SIZE * sizeof(jsn_t)),
+		.alloc = jsn_realloc
+	};
+
+	int len = basic_parse(&p);
+
+	if (end)
+		*end = p.ptr;
+
+	if (len <= 0) {
+		free(p.pool);
+		return NULL;
+	} else
+		jsn_free_tail(&p);
+
+	return p.pool;
 }
 

@@ -4,30 +4,28 @@ A small footprint(code and memory) simple JSON parsing C library for embedded pr
 Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
 
 
-## Build
+# Build
 
 ```
-# cmake .
+# cmake -DJSON_64BITS_INTEGERS=OFF -DJSON_HEX_NUMBERS=OFF -DJSON_FLOATS=OFF.
 # make
 ```
 
+## Build options
 
-### Build options
-
-* `JSON_64BITS_INTEGERS` "Enable support of 64 bits integers"
-* `JSON_HEX_NUMBERS` "Enabled support of 0x integers"
-* `JSON_FLOATS` "Enable support of Floating point Numbers"
+* `JSON_64BITS_INTEGERS` -- "Enable support of 64 bits integers"
+* `JSON_HEX_NUMBERS` -- "Enabled support of 0x integers"
+* `JSON_FLOATS` -- "Enable support of Floating point Numbers"
 
 
-## API
 
-### Include files
+# Include files
 
 ```c
 #include "nano/json.h"
 ```
 
-### Nodes types
+# Nodes types
 
 ```c
 typedef
@@ -37,9 +35,9 @@ enum {
 ```
 
 
-### Functions
+# Functions
 
-#### `int json_parse(jsn_t *pool, size_t size, char *text)`
+## `int json_parse(jsn_t *pool, size_t size, char *text)`
 
 * `pool` -- pointer to (somewhere allocated) array of `jsn_t` elements
 * `size` -- number of pool elements
@@ -50,20 +48,20 @@ then source text memory will be used for storing of values identifiers and strin
 Please, don't forget this.
 
 
-##### Return value
+### Return value
 
 The function return a number of used `jsn_t` elements of array pointed by `pool` argument.
 
 On error, negative value is returned, and errno is set appropriately.
 
-##### Errors
+### Errors
 
 * `ENOMEM` passed array of `jsn_t` elements is not enough for store parsed JSON data tree.
 * `EINVAL` impossible to parse passed JSON text. The returned negative value is offset to broken
 place of JSON code and text buffer will not be corrupted by parsing.
 
 
-##### Example
+### Example
 ```c
 	jsn_t json[100];
 	int len = json_parse(json, sizeof json / sizeof json[0], text);
@@ -77,27 +75,27 @@ place of JSON code and text buffer will not be corrupted by parsing.
 
 
 
-#### `jsn_t *json_auto_parse(char *text, char **end)`
+## `jsn_t *json_auto_parse(char *text, char **end)`
 
 * `text` -- JSON text source. Will be corrupted because all strings will be stored in this buffer.
 * `end` -- in case of parsing error by the .
 
 Parse JSON `text`.
 
-##### Return value
+### Return value
 
 The function return a pointer to array `jsn_t` elements. It will need release by call `free()`.
 
 On error, NULL is returned, and errno is set appropriately.
 
-##### Errors
+### Errors
 
 * `ENOMEM` Out of memory.
 * `EINVAL` impossible to parse passed JSON text. If `end` is not NULL, a pointer to broken
 JSON code will be stored in the pointer referenced by `end`. The text buffer will not be corrupted by parser.
 
 
-##### Example
+### Example
 ```c
 	char *err_pos;
 	jsn_t *json = json_auto_parse(text, &err_pos);
@@ -116,7 +114,7 @@ JSON code will be stored in the pointer referenced by `end`. The text buffer wil
 
 
 
-#### `char *json_stringify(char *out, size_t size, jsn_t *root)`
+## `char *json_stringify(char *out, size_t size, jsn_t *root)`
 
 * `outbuf` -- output buffer for JSON text
 * `size` -- size of output buffer including terminating zero
@@ -124,11 +122,11 @@ JSON code will be stored in the pointer referenced by `end`. The text buffer wil
 
 Convert parsed JSON tree back to text. May be useful for debugging purpose.
 
-##### Return value
+### Return value
 
 Return pointer to output buffer.
 
-##### Example
+### Example
 
 ```c
 	int source_len = strlen(source);
@@ -146,7 +144,7 @@ Return pointer to output buffer.
 ```
 
 
-#### `jsn_t *json_item(jsn_t *node, char const *id)`
+## `jsn_t *json_item(jsn_t *node, char const *id)`
 
 * `node` -- object json node to search element
 * `id` -- string identifier of object element
@@ -154,7 +152,7 @@ Return pointer to output buffer.
 Returns element of object with `id` or NULL if absent.
 
 
-#### `jsn_t *json_cell(jsn_t *node, int index)`
+## `jsn_t *json_cell(jsn_t *node, int index)`
 
 * `node` -- array json node to search element
 * `index` -- index of array element
@@ -163,7 +161,7 @@ Returns element of array with `index` or NULL if absent.
 
 
 
-#### `char const *json_string(jsn_t *node, char const *missed_value)`
+## `char const *json_string(jsn_t *node, char const *missed_value)`
 
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
@@ -175,7 +173,7 @@ If node is NULL returns `missed_value`.
 
 
 
-#### `int json_boolean(jsn_t *node, int missed_value)`
+## `int json_boolean(jsn_t *node, int missed_value)`
 
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
@@ -186,7 +184,7 @@ to boolean by JS type convertation rules.
 If node is NULL returns `missed_value`.
 
 
-#### `int json_number(jsn_t *node, int missed_value)`
+## `int json_number(jsn_t *node, int missed_value)`
 
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
@@ -197,7 +195,7 @@ by JS type convertation rules.
 If node is NULL returns `missed_value`.
 
 
-#### `double json_float(jsn_t *node, double missed_value)`
+## `double json_float(jsn_t *node, double missed_value)`
 
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
@@ -209,7 +207,7 @@ by JS type convertation rules.
 If node is NULL returns `missed_value`.
 
 
-#### `json_foreach`
+## `json_foreach`
 
 For enumerating of child nodes of JS_OBJECT/JS_ARRAY object you can use `json_foreach` macro-definition.
 
@@ -224,7 +222,7 @@ For enumerating of child nodes of JS_OBJECT/JS_ARRAY object you can use `json_fo
 ```
 
 
-## Big code example
+# Big code example
 
 ```c
 static int test_gets()

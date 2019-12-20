@@ -8,7 +8,7 @@
 test_basic()
 {
 	echo "run test $*"
-	cmake $* . && make && ./tests
+	cmake $* -DBUILD_TESTS=ON . && make && ./tests
 }
 
 test_hex()

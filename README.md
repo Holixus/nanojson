@@ -1,8 +1,10 @@
 # nanojson
 A small footprint(code and memory) simple JSON parsing C library for embedded projects
 
-Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
-
+* 64 bits integers(optional)
+* Hexadecimal("0x") integers(optional)
+* Good tests coverage
+* Buildable without float/double support
 
 # Build
 
@@ -13,12 +15,11 @@ Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
 
 ## Build options
 
-* `BUILD_SHARED_LIBRARY` -- Build shared library (not only static)
-* `JSON_64BITS_INTEGERS` -- Enable support of 64 bits integers
-* `JSON_HEX_NUMBERS` -- Enabled support of 0x integers
-* `JSON_FLOATS` -- Enable support of Floating point Numbers
-
-
+* `BUILD_SHARED_LIBRARY`(OFF) -- Build shared library (not only static)
+* `JSON_64BITS_INTEGERS`(OFF) -- Enable support of 64 bits integers
+* `JSON_HEX_NUMBERS`(OFF) -- Enabled support of 0x integers
+* `JSON_FLOATS`(OFF) -- Enable support of Floating point Numbers
+* `BUILD_TESTS`(ON) -- Build tests application
 
 # Include files
 
@@ -247,9 +248,8 @@ static int test_gets()
 
 	printf("parsed %d nodes\n", len);
 
-	int i = 0;
-	json_foreach(json, index) {
-		jsn_t *node = json + index;
+	json_foreach(json, offset) {
+		jsn_t *node = json + offset;
 
 		char const *version = json_string(json_item(node, "jsonrpc"), "0");
 		char const *method  = json_string(json_item(node, "method"), NULL);
@@ -257,8 +257,7 @@ static int test_gets()
 		jsn_t *params       =             json_item(node, "params");
 
 		printf("[%d]: version: %s, id: %d, method: %s, params: %s\n",
-		       i, version, id, method, json_stringify(ser, sizeof ser, params));
-		++i;
+		       node->id.index, version, id, method, json_stringify(ser, sizeof ser, params));
 	}
 	free(text);
 	return 0;

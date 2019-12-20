@@ -19,49 +19,6 @@ Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
 * `JSON_FLOATS` "Enable support of Floating point Numbers"
 
 
-## Usage examples
-
-```c
-static int test_gets()
-{
-	char ser[4096];
-	char *text = strdup("\
-[\
- {\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"capabilities\",\"params\":{}},\
- {\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"ololo\",\"params\":523424}\
-]");
-
-	printf("test_gets\n");
-
-	jsn_t json[100];
-	int len = json_parse(json, 100, text);
-	if (len < 0) {
-		perror("json_obj_scan parse");
-		free(text);
-		return 1;
-	}
-
-	printf("parsed %d nodes\n", len);
-
-	int i = 0;
-	json_foreach(json, index) {
-		jsn_t *node = json + index;
-
-		char const *version = json_string(json_item(node, "jsonrpc"), "0");
-		char const *method  = json_string(json_item(node, "method"), NULL);
-		int id              = json_number(json_item(node, "id"), -1);
-		jsn_t *params       =             json_item(node, "params");
-
-		printf("[%d]: version: %s, id: %d, method: %s, params: %s\n",
-		       i, version, id, method, json_stringify(ser, sizeof ser, params));
-		++i;
-	}
-	free(text);
-	return 0;
-}
-
-```
-
 ## API
 
 ### Include files
@@ -87,6 +44,11 @@ enum {
 * `pool` -- pointer to (somewhere allocated) array of `jsn_t` elements
 * `size` -- number of pool elements
 * `text` -- JSON text source. Will be corrupted because all strings will be stored in this buffer.
+
+Parse JSON text to array of nodes. The first node is always root node. If parsing made succesfully
+then source text memory will be used for storing of values identifiers and strings.
+Please, don't forget this.
+
 
 ##### Return value
 
@@ -152,23 +114,156 @@ JSON code will be stored in the pointer referenced by `end`. The text buffer wil
 	free(json);
 ```
 
-#### `int json_stringify(char *out, size_t size,/* <-- */ jsn_t *root)`
+
+
+#### `char *json_stringify(char *out, size_t size, jsn_t *root)`
+
+* `outbuf` -- output buffer for JSON text
+* `size` -- size of output buffer including terminating zero
+* `root` -- root element of json tree
+
+Convert parsed JSON tree back to text. May be useful for debugging purpose.
+
+##### Return value
+
+Return pointer to output buffer.
+
+##### Example
+
+```c
+	int source_len = strlen(source);
+	jsn_t *json = json_auto_parse(source, NULL);
+	if (!json)
+		return -1;
+
+	char string[source_len * 2];
+	json_stringify(string, sizeof string, json);
+
+	free(json);
+
+	printf("JSON: %s\n", string);
+	return 0;
+```
 
 
 #### `jsn_t *json_item(jsn_t *node, char const *id)`
+
+* `node` -- object json node to search element
+* `id` -- string identifier of object element
+
+Returns element of object with `id` or NULL if absent.
+
+
 #### `jsn_t *json_cell(jsn_t *node, int index)`
+
+* `node` -- array json node to search element
+* `index` -- index of array element
+
+Returns element of array with `index` or NULL if absent.
+
+
+
 #### `char const *json_string(jsn_t *node, char const *missed_value)`
+
+* `node` -- pointer to json node
+* `missed_value` -- default value if node is undefined (NULL)
+
+Returns pointer to string value of node. Not JS_STRING node will be converted
+to string in static buffer.
+
+If node is NULL returns `missed_value`.
+
+
+
 #### `int json_boolean(jsn_t *node, int missed_value)`
+
+* `node` -- pointer to json node
+* `missed_value` -- default value if node is undefined (NULL)
+
+Returns boolean(1 or 0) value of node. Not JS_BOOLEAN node will be converted 
+to boolean by JS type convertation rules.
+
+If node is NULL returns `missed_value`.
+
+
 #### `int json_number(jsn_t *node, int missed_value)`
+
+* `node` -- pointer to json node
+* `missed_value` -- default value if node is undefined (NULL)
+
+Returns integer value of node. Not JS_NUMBER node will be converted 
+by JS type convertation rules.
+
+If node is NULL returns `missed_value`.
+
+
 #### `double json_float(jsn_t *node, double missed_value)`
 
+* `node` -- pointer to json node
+* `missed_value` -- default value if node is undefined (NULL)
+
+Returns floating pointer(double) value of node. Not JS_FLOAT node will be converted 
+by JS type convertation rules.
+
+
+If node is NULL returns `missed_value`.
+
+
 #### `json_foreach`
-#### ``
+
+For enumerating of child nodes of JS_OBJECT/JS_ARRAY object you can use `json_foreach` macro-definition.
+
 
 ```c
+	jsn_t *obj = json_auto_parse("[1,2,3,4,5]");
 	json_foreach(obj, offset) {
 		jsn_t *node = obj + offset;
-		...
+		printf("obj[%d] = '%s'\n", node->id.index, json_string(node));
 	}
+	free(obj);
+```
+
+
+## Big code example
+
+```c
+static int test_gets()
+{
+	char ser[4096];
+	char *text = strdup("\
+[\
+ {\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"capabilities\",\"params\":{}},\
+ {\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"ololo\",\"params\":523424}\
+]");
+
+	printf("test_gets\n");
+
+	jsn_t json[100];
+	int len = json_parse(json, 100, text);
+	if (len < 0) {
+		perror("json_obj_scan parse");
+		free(text);
+		return 1;
+	}
+
+	printf("parsed %d nodes\n", len);
+
+	int i = 0;
+	json_foreach(json, index) {
+		jsn_t *node = json + index;
+
+		char const *version = json_string(json_item(node, "jsonrpc"), "0");
+		char const *method  = json_string(json_item(node, "method"), NULL);
+		int id              = json_number(json_item(node, "id"), -1);
+		jsn_t *params       =             json_item(node, "params");
+
+		printf("[%d]: version: %s, id: %d, method: %s, params: %s\n",
+		       i, version, id, method, json_stringify(ser, sizeof ser, params));
+		++i;
+	}
+	free(text);
+	return 0;
+}
+
 ```
 

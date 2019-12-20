@@ -64,11 +64,6 @@ char *json_stringify(char *outbuf, size_t, /* <-- */ jsn_t *root);
 /* ------------------------------------------------------------------------ */
 /* node functions                                                           */
 
-static inline int json_type(jsn_t *node) { return node->type; }
-
-static inline int is_json_object(jsn_t *node) { return node->type == JS_OBJECT; }
-static inline int is_json_array(jsn_t *node) { return node->type == JS_ARRAY; }
-
 int          json_boolean(jsn_t *node, int absent);
 jsn_number_t json_number (jsn_t *node, jsn_number_t absent);
 char const  *json_string (jsn_t *node, char const *absent);

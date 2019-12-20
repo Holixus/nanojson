@@ -34,13 +34,6 @@ jsn_t *json_cell(jsn_t *obj, int index)
 
 
 /* ------------------------------------------------------------------------ */
-int json_length(jsn_t *obj)
-{
-	return obj->type >= JS_ARRAY ? obj->data.object.length : 0;
-}
-
-
-/* ------------------------------------------------------------------------ */
 int json_boolean(jsn_t *node, int absent)
 {
 	if (!node)

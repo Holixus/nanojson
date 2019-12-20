@@ -13,9 +13,10 @@ Supports 64 bits integers(optional) and hexadecimal("0x") integers(optional).
 
 ## Build options
 
-* `JSON_64BITS_INTEGERS` -- "Enable support of 64 bits integers"
-* `JSON_HEX_NUMBERS` -- "Enabled support of 0x integers"
-* `JSON_FLOATS` -- "Enable support of Floating point Numbers"
+* `BUILD_SHARED_LIBRARY` -- Build shared library (not only static)
+* `JSON_64BITS_INTEGERS` -- Enable support of 64 bits integers
+* `JSON_HEX_NUMBERS` -- Enabled support of 0x integers
+* `JSON_FLOATS` -- Enable support of Floating point Numbers
 
 
 

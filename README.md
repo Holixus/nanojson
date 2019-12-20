@@ -64,6 +64,12 @@ static int test_gets()
 
 ## API
 
+### Include files
+
+```c
+#include "nano/json.h"
+```
+
 ### Nodes types
 
 ```c
@@ -78,7 +84,7 @@ enum {
 
 #### `int json_parse(jsn_t *pool, size_t size, char *text)`
 
-* `pool` -- pointer to allocated(somewhere) array of `jsn_t` elements
+* `pool` -- pointer to (somewhere allocated) array of `jsn_t` elements
 * `size` -- number of pool elements
 * `text` -- JSON text source. Will be corrupted because all strings will be stored in this buffer.
 
@@ -91,7 +97,7 @@ On error, negative value is returned, and errno is set appropriately.
 ##### Errors
 
 * `ENOMEM` passed array of `jsn_t` elements is not enough for store parsed JSON data tree.
-* `EINVAL` impossible to parse passed JSON text. The returned negative value is offset to broked
+* `EINVAL` impossible to parse passed JSON text. The returned negative value is offset to broken
 place of JSON code and text buffer will not be corrupted by parsing.
 
 
@@ -107,7 +113,44 @@ place of JSON code and text buffer will not be corrupted by parsing.
 
 ```
 
+
+
 #### `jsn_t *json_auto_parse(char *text, char **end)`
+
+* `text` -- JSON text source. Will be corrupted because all strings will be stored in this buffer.
+* `end` -- in case of parsing error by the .
+
+Parse JSON `text`.
+
+##### Return value
+
+The function return a pointer to array `jsn_t` elements. It will need release by call `free()`.
+
+On error, NULL is returned, and errno is set appropriately.
+
+##### Errors
+
+* `ENOMEM` Out of memory.
+* `EINVAL` impossible to parse passed JSON text. If `end` is not NULL, a pointer to broken
+JSON code will be stored in the pointer referenced by `end`. The text buffer will not be corrupted by parser.
+
+
+##### Example
+```c
+	char *err_pos;
+	jsn_t *json = json_auto_parse(text, &err_pos);
+	if (!json) {
+		if (errno == EINVAL) {
+			char crop[50];
+			snprintf(crop, sizeof crop, "%s", err_pos);
+			perror("json_auto_parse: JSON syntax error at the code '%s'", crop);
+		} else
+			perror("json_auto_parse");
+		return -1;
+	}
+	...
+	free(json);
+```
 
 #### `int json_stringify(char *out, size_t size,/* <-- */ jsn_t *root)`
 

@@ -64,42 +64,68 @@ static int test_gets()
 
 ## API
 
+### Nodes types
+
 ```c
 typedef
 enum {
 	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
+```
 
 
-int json_parse(jsn_t *pool, size_t size,  /* <-- */ char *text);
+### Functions
 
-int json_stringify(char *out, size_t size,/* <-- */ jsn_t *root);
+#### `int json_parse(jsn_t *pool, size_t size, char *text)`
 
+* `pool` -- pointer to allocated(somewhere) array of `jsn_t` elements
+* `size` -- number of pool elements
+* `text` -- JSON text source. Will be corrupted because all strings will be stored in this buffer.
 
-int json_type(jsn_t *node);
+##### Return value
 
-int is_json_object(jsn_t *node);
-int is_json_array(jsn_t *node);
+The function return a number of used `jsn_t` elements of array pointed by `pool` argument.
 
-int json_length(jsn_t *node);
+On error, negative value is returned, and errno is set appropriately.
 
-jsn_t *json_item(jsn_t *node, char const *id);
-jsn_t *json_cell(jsn_t *node, int index);
+##### Errors
 
-int json_boolean(jsn_t *node, int missed_value);
-int json_number(jsn_t *node, int missed_value);
-
-double json_float(jsn_t *node, double missed_value);
-
-char const *json_string(jsn_t *node, char const *missed_value);
+* `ENOMEM` passed array of `jsn_t` elements is not enough for store parsed JSON data tree.
+* `EINVAL` impossible to parse passed JSON text. The returned negative value is offset to broked
+place of JSON code and text buffer will not be corrupted by parsing.
 
 
-/*
-	json_foreach(obj, index) {
-		jsn_t *node = obj + index;
+##### Example
+```c
+	jsn_t json[100];
+	int len = json_parse(json, sizeof json / sizeof json[0], text);
+	if (len < 0) {
+		perror("json_parse");
 		...
 	}
-*/
+	...
 
+```
+
+#### `jsn_t *json_auto_parse(char *text, char **end)`
+
+#### `int json_stringify(char *out, size_t size,/* <-- */ jsn_t *root)`
+
+
+#### `jsn_t *json_item(jsn_t *node, char const *id)`
+#### `jsn_t *json_cell(jsn_t *node, int index)`
+#### `char const *json_string(jsn_t *node, char const *missed_value)`
+#### `int json_boolean(jsn_t *node, int missed_value)`
+#### `int json_number(jsn_t *node, int missed_value)`
+#### `double json_float(jsn_t *node, double missed_value)`
+
+#### `json_foreach`
+#### ``
+
+```c
+	json_foreach(obj, offset) {
+		jsn_t *node = obj + offset;
+		...
+	}
 ```
 

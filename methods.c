@@ -40,6 +40,7 @@ int json_boolean(jsn_t *node, int absent)
 		return absent;
 
 	switch (node->type) {
+	case JS_UNDEFINED:
 	case JS_NULL:
 		return 0;
 	case JS_BOOLEAN:
@@ -66,6 +67,7 @@ jsn_number_t json_number(jsn_t *node, jsn_number_t absent)
 		return absent;
 
 	switch (node->type) {
+	case JS_UNDEFINED:
 	case JS_NULL:
 		return 0;
 	case JS_BOOLEAN:
@@ -103,6 +105,7 @@ double json_float(jsn_t *node, double absent)
 		return absent;
 
 	switch (node->type) {
+	case JS_UNDEFINED:
 	case JS_NULL:
 		return 0.d;
 	case JS_BOOLEAN:
@@ -161,6 +164,9 @@ char const *json_string(jsn_t *node, char const *absent)
 		return absent;
 
 	switch (node->type) {
+	case JS_UNDEFINED:
+		return "undefined";
+
 	case JS_NULL:
 		return "null";
 

@@ -13,59 +13,25 @@ char *string_escape(char *p, char *e, char const *s)
 {
 	static char const hex[] = "0123456789abcdef";
 	while (p < e && *s) {
-		int c = *s++;
-		if (32 <= c && c <= 127) {
-			switch (c) {
-			case '"':
-			//case '/':
-			case '\\':
-				*p++ = '\\';
-			}
+		unsigned int c = (unsigned char)*s++;
+		if (c >= ' ' && c != '"' && c != '\\') {
 			*p++ = c;
 			continue;
 		}
 		*p++ = '\\';
-		if (c < ' ')
-			switch (c) {
-			case '\b': *p++ = 'b'; continue;
-			case '\f': *p++ = 'f'; continue;
-			case '\n': *p++ = 'n'; continue;
-			case '\r': *p++ = 'r'; continue;
-			case '\t': *p++ = 't'; continue;
-			}
+		switch (c) {
+		case '"':
+		//case '/':
+		case '\\': *p++ = c; continue;
+		case '\b': *p++ = 'b'; continue;
+		case '\f': *p++ = 'f'; continue;
+		case '\n': *p++ = 'n'; continue;
+		case '\r': *p++ = 'r'; continue;
+		case '\t': *p++ = 't'; continue;
+		}
 
-		uint32_t uc = 0xFFFF;
-		if (!(c & 0200)) {
-			if (c >= ' ') {
-				p[-1] = c;
-				continue;
-			}
-			uc = c;
-		} else
-			if ((c & 0340) == 0300) {
-				if ((s[0] & 0300) == 0200) {
-					uc = ((c & 037) << 6) + (s[0] & 077);
-					if ((uc >= ' ' && uc < 128) || (uc >= 160)) {
-						p[-1] = c;
-						*p++ = *s++;
-						continue;
-					}
-					++s;
-				}
-			} else
-				if ((c & 0360) == 0340) {
-					if ((s[0] & 0300) == 0200 && (s[1] & 0300) == 0200) {
-						uc = ((c & 017) << 12) + ((s[0] & 077) << 6) + (s[1] & 077);
-						if ((uc >= ' ' && uc < 128) || (uc >= 160)) {
-							p[-1] = c;
-							*p++ = *s++;
-							*p++ = *s++;
-							continue;
-						}
-						s += 2;
-					}
-				}
 		*p++ = 'u';
+		unsigned int uc = c;
 		p[0] = hex[uc >> 12 & 15];
 		p[1] = hex[uc >>  8 & 15];
 		p[2] = hex[uc >>  4 & 15];

@@ -1,5 +1,5 @@
 # nanojson
-A small footprint(code and memory) simple JSON parsing C library for embedded projects
+A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/rfc8259.html) parsing C library for embedded projects
 
 * 64 bits integers(optional)
 * Hexadecimal("0x") integers(optional)

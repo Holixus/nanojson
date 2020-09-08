@@ -86,7 +86,7 @@ Parse JSON `text`.
 
 ### Return value
 
-The function return a pointer to array `jsn_t` elements. It will need release by call `free()`.
+The function return a pointer to array `jsn_t` elements. Should be released by `free()`.
 
 On error, NULL is returned, and errno is set appropriately.
 

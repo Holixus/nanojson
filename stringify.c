@@ -83,6 +83,10 @@ static char *json_to_str(char *p, char *e, jsn_t *root)
 		}
 		if (p < e) *p++ = is_object ? '}' : ']';
 		break;
+#ifdef DEBUG
+	default:
+		return p + snprintf(p, (size_t)(e-p), "<<<bad-type-%d>>>", root->type);
+#endif
 	}
 	if (p < e)
 		*p = 0;

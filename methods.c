@@ -116,6 +116,8 @@ double json_float(jsn_t *node, double absent)
 	case JS_STRING:;
 		jsn_t num;
 		char *s = node->data.string;
+		if (!*s)
+			return (double)0;
 		if (!match_number(&s, &num))
 			return NAN;
 		return json_float(&num, absent);

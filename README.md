@@ -19,6 +19,8 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 * `JSON_64BITS_INTEGERS`(OFF) -- Enable support of 64 bits integers
 * `JSON_HEX_NUMBERS`(OFF) -- Enabled support of 0x integers
 * `JSON_FLOATS`(OFF) -- Enable support of Floating point Numbers
+* `JSON_SHORT_NEXT`(OFF) -- Use `short` type for next field of jsn_t
+* `JSON_PACKED`(OFF) -- Use packed json item structure
 * `BUILD_TESTS`(ON) -- Build tests application
 
 # Include files
@@ -32,7 +34,7 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 ```c
 typedef
 enum {
-	JS_UNDEFINED, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
+	JS_UNDEFINED=1, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
 ```
 

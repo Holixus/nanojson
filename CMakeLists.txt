@@ -7,6 +7,8 @@ OPTION(BUILD_TESTS "Build tests application" ON)
 OPTION(JSON_FLOATS "Enabled support of floating point numbers" OFF)
 OPTION(JSON_64BITS_INTEGERS "Enable support of 64 bits integers" OFF)
 OPTION(JSON_HEX_NUMBERS "Enabled support of 0x integers" OFF)
+OPTION(JSON_PACKED "use packed json item structure" OFF)
+OPTION(JSON_SHORT_NEXT "use short type for next field of jsn_t" OFF)
 
 
 OPTION(HOST_DEBUG "Log to console" OFF)

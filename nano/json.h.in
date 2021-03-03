@@ -5,6 +5,8 @@
 #cmakedefine JSON_FLOATS
 #cmakedefine JSON_64BITS_INTEGERS
 #cmakedefine JSON_HEX_NUMBERS
+#cmakedefine JSON_PACKED
+#cmakedefine JSON_SHORT_NEXT
 
 #ifdef JSON_FLOATS
 #include "math.h"
@@ -19,7 +21,13 @@ enum {
 #ifdef JSON_64BITS_INTEGERS
 typedef int64_t jsn_number_t;
 #else
-typedef int32_t jsn_number_t;
+typedef int jsn_number_t;
+#endif
+
+#ifdef JSON_SHORT_NEXT
+typedef short jsn_next_t;
+#else
+typedef int jsn_next_t;
 #endif
 
 
@@ -29,24 +37,28 @@ typedef int32_t jsn_number_t;
 typedef
 struct jsn {
 	union {
-		char *string;    /* string id of the node in object    */
-		uint32_t number; /* integer index of the node in array */
+		char *string;        /* string id of the node in object    */
+		unsigned int number; /* integer index of the node in array */
 	} id;
-	char id_type;        /* type of id. JS_NUMBER(in array) or JS_STRING(in object)    */
-	char type;           /* type of data (nj_type_t)                                   */
-	short next;          /* index offset to next sibling node (0 - parent node offset) */
 	union {
 		jsn_number_t number;
 		char *string;
+		struct {
+			jsn_next_t first; /* offset to first object/array element. for empty object it equals -1. in other cases = 1. */
+			jsn_next_t length;/* number of object/array elements */
+		} object;             /* object/array data */
 #ifdef JSON_FLOATS
 		double floating;
 #endif
-		struct {
-			short first; /* offset to first object/array element. for empty object it equals -1. in other cases = 1. */
-			short length;/* number of object/array elements */
-		} object;        /* object/array data */
 	} data;
-} __attribute__((packed)) jsn_t;
+	jsn_next_t next;     /* index offset to next sibling node (0 - parent node offset) */
+	char id_type;        /* type of id. JS_NUMBER(in array) or JS_STRING(in object)    */
+	char type;           /* type of data (nj_type_t)                                   */
+}
+#ifdef JSON_PACKED
+__attribute__((packed))
+#endif
+jsn_t;
 
 
 

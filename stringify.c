@@ -48,6 +48,8 @@ char *string_escape(char *p, char *e, char const *s)
 static char *json_to_str(char *p, char *e, jsn_t *root)
 {
 	switch (root->type) {
+	case JS_UNDEFINED:
+		return p + snprintf(p, (size_t)(e-p), "undefined");
 	case JS_NULL:
 		return p + snprintf(p, (size_t)(e-p), "null");
 	case JS_BOOLEAN:

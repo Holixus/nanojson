@@ -183,6 +183,7 @@ static int test_auto_ok(char const *source, char const *expected)
 	char *result = malloc(length);
 	json_stringify(result, length - 5, json);
 
+	free(json);
 	if (!strcmp(result, expected)) {
 		//printf("    [OK]\n");
 		free(result);
@@ -191,7 +192,6 @@ static int test_auto_ok(char const *source, char const *expected)
 		printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", source, result, expected);
 	}
 	free(result);
-	free(json);
 	return 0;
 }
 
@@ -499,6 +499,8 @@ static int test_string()
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
+	printf("sizeof jsn_t: %ld\n", sizeof (jsn_t));
+
 	printf("Test json_parse()\n");
 	if (!test_json_parse())
 		return -1;

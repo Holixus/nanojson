@@ -246,9 +246,7 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 			obj->data.number = 0;
 			return obj->type = JS_BOOLEAN;
 		default:
-			if (!match_number(&p->ptr, obj))
-				return errno = EINVAL, 0;
-			return obj->type;
+			return match_number(&p->ptr, obj) ?: ( errno = EINVAL, 0);
 		}
 	}
 
@@ -258,7 +256,9 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 	int close_char = is_object ? '}' : ']';
 
 	int index = 0;
-	short *next = &obj->data.object.first;
+	obj->data.object.first = 0;
+	int prev_index = obj - p->pool;
+	int obj_index = obj - p->pool;
 
 	if (match_char(&p->ptr, close_char))
 		goto _empty;
@@ -268,7 +268,14 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 		jsn_t *node = p->alloc(p);
 		if (!node)
 			return 0;
-		*next = (short)(node - obj);
+		int node_index = (int)(node - p->pool);
+
+		jsn_t *prev = p->pool + prev_index;
+		if (obj_index != prev_index)
+			prev->next = node_index - obj_index;
+		else
+			prev->data.object.first = node_index - obj_index;
+
 		if (is_object) {
 			if (!match_string(&p->ptr, &node->id.string))
 				return errno = EINVAL, 0;
@@ -283,7 +290,7 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 		if (!match_json(p, node))
 			return 0;
 
-		next = &node->next;
+		prev_index = node_index;
 		++index;
 	} while (match_char(&p->ptr, ','));
 
@@ -291,9 +298,11 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 		return errno = EINVAL, 0;
 
 _empty:
-	*next = -1; // end of list
+	if (obj_index != prev_index)
+		p->pool[prev_index].next = 0; // end of list
+	obj = p->pool + obj_index;
 	obj->data.object.length = index;
-	return obj->type = is_object ? JS_OBJECT : JS_ARRAY;
+	return obj->type = (is_object ? JS_OBJECT : JS_ARRAY);
 }
 
 
@@ -350,7 +359,7 @@ static jsn_t *jsn_realloc(jsn_parser_t *p)
 {
 	if (p->free_node_index >= p->pool_size) {
 		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * (p->pool_size + 32));
-		if (!p->pool)
+		if (!pool)
 			return errno = ENOMEM, NULL;
 		p->pool = pool;
 	}
@@ -365,7 +374,7 @@ static int jsn_free_tail(jsn_parser_t *p)
 {
 	if (p->free_node_index < p->pool_size) {
 		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * p->free_node_index);
-		if (!p->pool)
+		if (!pool)
 			return errno = ENOMEM, -1;
 		p->pool = pool;
 	}
@@ -388,7 +397,6 @@ jsn_t *json_auto_parse(char *text, char **end)
 	};
 
 	int len = basic_parse(&p);
-
 	if (end)
 		*end = p.ptr;
 

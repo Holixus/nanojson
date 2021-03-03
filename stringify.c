@@ -78,7 +78,7 @@ static char *json_to_str(char *p, char *e, jsn_t *root)
 				if (p < e) *p++ = ':';
 			}
 			p = json_to_str(p, e, node);
-			if (node->next >= 0)
+			if (node->next > 0)
 				if (p < e) *p++ = ',';
 		}
 		if (p < e) *p++ = is_object ? '}' : ']';

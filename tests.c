@@ -499,7 +499,7 @@ static int test_string()
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
-	printf("sizeof jsn_t: %ld\n", sizeof (jsn_t));
+	printf("sizeof jsn_t: %u\n", (unsigned int)sizeof (jsn_t));
 
 	printf("Test json_parse()\n");
 	if (!test_json_parse())

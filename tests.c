@@ -81,8 +81,10 @@ static char *good[] = {
 	,"-1", "-1"
 #ifdef JSON_64BITS_INTEGERS
 	,"100000000000", "100000000000"
+	,"-100000000000", "-100000000000"
 #else
-	,"100000000000", "1215752192"
+	,"100000000000", "2147483647"
+	,"-100000000000", "-2147483648"
 #endif
 #ifdef JSON_HEX_NUMBERS
 	,"0x40", "64"
@@ -290,8 +292,9 @@ static int test_boolean()
 		,{ "\"123\"", 1 }
 #ifdef JSON_64BITS_INTEGERS
 		,{ "100000000000", 1 }
+		,{ "4294967296", 1 }
 #else
-		,{ "4294967296", 0 }
+		,{ "4294967296", 1 }
 		,{ "100000000000", 1 }
 #endif
 #ifdef JSON_HEX_NUMBERS
@@ -343,9 +346,10 @@ static int test_number()
 		,{ "\"123\"", 123 }
 #ifdef JSON_64BITS_INTEGERS
 		,{ "100000000000", 100000000000 }
+		,{ "4294967296", 4294967296 }
 #else
-		,{ "4294967296", 0 }
-		,{ "100000000000", 1215752192 }
+		,{ "4294967296", 2147483647 }
+		,{ "100000000000", 2147483647 }
 #endif
 #ifdef JSON_HEX_NUMBERS
 		,{ "\"0x123\"", 291 }
@@ -402,7 +406,7 @@ static int test_float()
 #ifdef JSON_64BITS_INTEGERS
 		,{ "100000000000", 100000000000.d }
 #else
-		,{ "100000000000", 1215752192.d }
+		,{ "100000000000", 2147483647.d }
 #endif
 		,{ "1e4", 1e4 }
 #ifdef JSON_HEX_NUMBERS
@@ -457,8 +461,8 @@ static int test_string()
 #ifdef JSON_64BITS_INTEGERS
 		,{ "100000000000", "100000000000" }
 #else
-		,{ "4294967296",   "0" }
-		,{ "100000000000", "1215752192" }
+		,{ "4294967296",   "2147483647" }
+		,{ "100000000000", "2147483647" }
 #endif
 #ifdef JSON_HEX_NUMBERS
 		,{ "0x123", "291" }
@@ -509,12 +513,12 @@ int main(int argc, char *argv[])
 	if (!test_json_auto_parse())
 		return -1;
 
-	printf("Test json_boolean()\n");
-	if (!test_boolean())
-		return -1;
-
 	printf("Test json_number()\n");
 	if (!test_number())
+		return -1;
+
+	printf("Test json_boolean()\n");
+	if (!test_boolean())
 		return -1;
 
 #ifdef JSON_FLOATS

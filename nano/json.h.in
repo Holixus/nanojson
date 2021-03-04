@@ -21,7 +21,7 @@ enum {
 #ifdef JSON_64BITS_INTEGERS
 typedef int64_t jsn_number_t;
 #else
-typedef int jsn_number_t;
+typedef int32_t jsn_number_t;
 #endif
 
 #ifdef JSON_SHORT_NEXT
@@ -117,11 +117,13 @@ char *float2str(char *p, char *e, double f);
 #endif
 
 
+
 #ifdef JSON_64BITS_INTEGERS
 #define JSN_NUMBER_FORMAT "%li"
 #else
 #define JSN_NUMBER_FORMAT "%d"
 #endif
+
 #ifdef JSON_FLOATS
 #define JSN_FLOAT_FORMAT "%.11f"
 #endif

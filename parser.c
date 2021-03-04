@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "stdint.h"
+#include "limits.h"
 #include "stdarg.h"
 #include "string.h"
 #include "errno.h"
@@ -94,10 +95,34 @@ int match_number(char **p, jsn_t *obj)
 	}
 #endif
 #ifdef JSON_64BITS_INTEGERS
+#if LLONG_MAX == INT64_MAX
 	obj->data.number = strtoll(s, p, 0);
 #else
+#if LONG_MAX == INT64_MAX
 	obj->data.number = strtol(s, p, 0);
+#else
+	#error "impossible to choose of 64 bits strtol function"
 #endif
+#endif
+#else
+#if LLONG_MAX == INT32_MAX
+	obj->data.number = strtoll(s, p, 0);
+#else
+#if LONG_MAX == INT32_MAX
+	obj->data.number = strtol(s, p, 0);
+#else
+#if LONG_MAX > INT32_MAX
+	long l = strtol(s, p, 0);
+	if (l > INT32_MAX) l = INT32_MAX;
+	else if (l < INT32_MIN) l = INT32_MIN;
+	obj->data.number = l;
+#else
+	#error "impossible to choose of 32 bits strtol function"
+#endif
+#endif
+#endif
+#endif
+
 	return *p == s ? 0 : (obj->type = JS_NUMBER);
 }
 

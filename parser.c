@@ -328,7 +328,8 @@ static jsn_t *jsn_alloc(jsn_parser_t *p)
 	if (p->free_node_index >= p->pool_size)
 		return errno = ENOMEM, NULL;
 	jsn_t *j = p->pool + p->free_node_index++;
-	memset(j, 0, sizeof *j);
+	j->next = 0;
+	j->type = 0;
 	return j;
 }
 
@@ -349,18 +350,19 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 }
 
 
+#define POOL_INCREASE_STEP (32)
+
 /* ------------------------------------------------------------------------ */
 static jsn_t *jsn_realloc(jsn_parser_t *p)
 {
 	if (p->free_node_index >= p->pool_size) {
-		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * (p->pool_size + 32));
+		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * (p->pool_size + POOL_INCREASE_STEP));
 		if (!pool)
 			return errno = ENOMEM, NULL;
 		p->pool = pool;
+		p->pool_size += POOL_INCREASE_STEP;
 	}
-	jsn_t *j = p->pool + p->free_node_index++;
-	memset(j, 0, sizeof *j);
-	return j;
+	return jsn_alloc(p);
 }
 
 

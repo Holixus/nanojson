@@ -43,10 +43,7 @@ struct jsn {
 	union {
 		jsn_number_t number;
 		char *string;
-		struct {
-			jsn_next_t first; /* offset to first object/array element. for empty object it equals -1. in other cases = 1. */
-			jsn_next_t length;/* number of object/array elements */
-		} object;             /* object/array data */
+		jsn_next_t length;/* number of object/array elements */
 #ifdef JSON_FLOATS
 		double floating;
 #endif
@@ -96,7 +93,7 @@ jsn_t *json_cell(jsn_t *obj, int index);
 
 
 #define json_foreach(obj, offset) \
-	for (int offset = obj->data.object.first; offset > 0; offset = obj[offset].next)
+	if (obj->data.length) for (int offset = 1; offset > 0; offset = obj[offset].next)
 
 /*
 	json_foreach(obj, offset) {

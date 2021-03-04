@@ -256,26 +256,23 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 	int close_char = is_object ? '}' : ']';
 
 	int index = 0;
-	obj->data.object.first = 0;
-	int prev_index = obj - p->pool;
-	int obj_index = obj - p->pool;
 
 	if (match_char(&p->ptr, close_char))
 		goto _empty;
 
+	int prev_ofs = obj - p->pool;
+	int obj_ofs = obj - p->pool;
 	do {
-		after_space(&p->ptr);
 		jsn_t *node = p->alloc(p);
 		if (!node)
 			return 0;
-		int node_index = (int)(node - p->pool);
 
-		jsn_t *prev = p->pool + prev_index;
-		if (obj_index != prev_index)
-			prev->next = node_index - obj_index;
-		else
-			prev->data.object.first = node_index - obj_index;
+		int node_ofs = (int)(node - p->pool);
+		if (obj_ofs != prev_ofs)
+			p->pool[prev_ofs].next = node_ofs - obj_ofs;
+		prev_ofs = node_ofs;
 
+		after_space(&p->ptr);
 		if (is_object) {
 			if (!match_string(&p->ptr, &node->id.string))
 				return errno = EINVAL, 0;
@@ -290,18 +287,16 @@ static int match_json(jsn_parser_t *p, jsn_t *obj)
 		if (!match_json(p, node))
 			return 0;
 
-		prev_index = node_index;
 		++index;
 	} while (match_char(&p->ptr, ','));
 
 	if (!match_char(&p->ptr,  close_char))
 		return errno = EINVAL, 0;
 
+	obj = p->pool + obj_ofs;
+
 _empty:
-	if (obj_index != prev_index)
-		p->pool[prev_index].next = 0; // end of list
-	obj = p->pool + obj_index;
-	obj->data.object.length = index;
+	obj->data.length = index;
 	return obj->type = (is_object ? JS_OBJECT : JS_ARRAY);
 }
 

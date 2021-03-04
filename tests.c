@@ -149,8 +149,8 @@ static int test_ok(char const *source, char const *expected)
 	char *text = strdup(source);
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
+		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", source, -p, text - p);
 		free(text);
-		printf("    <<<%s>>> [FAILED] // parsing %d\n", source, -p);
 		return 0;
 	}
 	size_t length = strlen(source) * 3 + 10;
@@ -175,8 +175,8 @@ static int test_auto_ok(char const *source, char const *expected)
 	char *text = strdup(source), *end;
 	jsn_t *json = json_auto_parse(text, &end);
 	if (!json) {
+		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", source, (int)(end - text), end);
 		free(text);
-		printf("    <<<%s>>> [FAILED] // parsing %d\n", source, (int)(end - text));
 		return 0;
 	}
 	size_t length = strlen(source) * 3 + 10;

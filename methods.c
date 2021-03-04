@@ -22,7 +22,7 @@ jsn_t *json_item(jsn_t *obj, char const *id)
 /* ------------------------------------------------------------------------ */
 jsn_t *json_cell(jsn_t *obj, int index)
 {
-	if (index >= obj->data.object.length)
+	if (index >= obj->data.length)
 		return NULL;
 
 	json_foreach(obj, index)
@@ -89,8 +89,8 @@ jsn_number_t json_number(jsn_t *node, jsn_number_t absent)
 			return 0;
 		return json_number(&num, absent);
 	case JS_ARRAY:
-		if (node->data.object.length == 1)
-			return json_number(node + node->data.object.first, absent);
+		if (node->data.length == 1)
+			return json_number(node + 1, absent);
 	case JS_OBJECT:
 		return 0;
 	}
@@ -122,8 +122,8 @@ double json_float(jsn_t *node, double absent)
 			return NAN;
 		return json_float(&num, absent);
 	case JS_ARRAY:
-		if (node->data.object.length == 1)
-			return json_float(node + node->data.object.first, absent);
+		if (node->data.length == 1)
+			return json_float(node + 1, absent);
 	case JS_OBJECT:
 		return 0.d;
 	}

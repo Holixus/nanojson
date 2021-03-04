@@ -170,8 +170,8 @@ Returns element of array with `index` or NULL if absent.
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
 
-Returns pointer to string value of node. Not JS_STRING node will be converted
-to string in static buffer.
+Returns pointer to string value of node. For non JS_STRING node will be casted
+to static buffer string.
 
 If node is NULL returns `missed_value`.
 
@@ -182,7 +182,7 @@ If node is NULL returns `missed_value`.
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
 
-Returns boolean(1 or 0) value of node. Not JS_BOOLEAN node will be converted 
+Returns boolean(1 or 0) value of node. Non JS_BOOLEAN node will be casted 
 to boolean by JS type convertation rules.
 
 If node is NULL returns `missed_value`.
@@ -193,7 +193,7 @@ If node is NULL returns `missed_value`.
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
 
-Returns integer value of node. Not JS_NUMBER node will be converted 
+Returns integer value of node. Non JS_NUMBER node will be casted 
 by JS type convertation rules.
 
 If node is NULL returns `missed_value`.
@@ -204,7 +204,7 @@ If node is NULL returns `missed_value`.
 * `node` -- pointer to json node
 * `missed_value` -- default value if node is undefined (NULL)
 
-Returns floating pointer(double) value of node. Not JS_FLOAT node will be converted 
+Returns floating pointer(double) value of node. Non JS_FLOAT node will be casted 
 by JS type convertation rules.
 
 

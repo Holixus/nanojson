@@ -5,6 +5,7 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 * Hexadecimal("0x") integers(optional)
 * Good tests coverage
 * Buildable without float/double support
+* Ability to parse JSON text without malloc usage
 
 # Build
 

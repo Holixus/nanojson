@@ -503,7 +503,34 @@ static int test_string()
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
-	printf("sizeof jsn_t: %u\n", (unsigned int)sizeof (jsn_t));
+	printf("---------------------------\n"
+		"Opts:"
+#ifdef JSON_FLOATS
+		" fl"
+#else
+		" --"
+#endif
+#ifdef JSON_64BITS_INTEGERS
+		" wi"
+#else
+		" --"
+#endif
+#ifdef JSON_HEX_NUMBERS
+		" hn"
+#else
+		" --"
+#endif
+#ifdef JSON_PACKED
+		" pk"
+#else
+		" --"
+#endif
+#ifdef JSON_SHORT_NEXT
+		" sn"
+#else
+		" --"
+#endif
+		" | sizeof jsn_t: %u\n", (unsigned int)sizeof (jsn_t));
 
 	printf("Test json_parse()\n");
 	if (!test_json_parse())

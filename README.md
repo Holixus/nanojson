@@ -23,11 +23,11 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 * `JSON_SHORT_NEXT`(OFF) -- Use `short` type for next field of jsn_t
 * `JSON_PACKED`(OFF) -- Use packed json item structure
 
-* `JSON_AUTO_PARSE_FN'(ON) -- Build json_auto_parse() function
+* `JSON_AUTO_PARSE_FN`(ON) -- Build json_auto_parse() function
   * `JSON_AUTO_PARSE_POOL_START_SIZE`(32) -- Initial jsn_t array size
   * `JSON_AUTO_PARSE_POOL_INCREASE`(n+32) -- Increase jsn_t array size formula
 
-* `JSON_STRINGIFY_FN'(ON) -- Build json_stringify() function
+* `JSON_STRINGIFY_FN`(ON) -- Build json_stringify() function
 
 * `BUILD_TESTS`(ON) -- Build tests application
 

@@ -374,6 +374,7 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 	return basic_parse(&p);
 }
 
+#ifdef JSON_AUTO_PARSE_FN
 
 #define POOL_INCREASE_STEP (32)
 
@@ -431,3 +432,4 @@ jsn_t *json_auto_parse(char *text, char **end)
 	return p.pool;
 }
 
+#endif /* JSON_AUTO_PARSE */

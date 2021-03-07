@@ -22,6 +22,10 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 * `JSON_FLOATS`(OFF) -- Enable support of Floating point Numbers
 * `JSON_SHORT_NEXT`(OFF) -- Use `short` type for next field of jsn_t
 * `JSON_PACKED`(OFF) -- Use packed json item structure
+
+* `JSON_AUTO_PARSE_FN'(ON) -- Build json_auto_parse() function
+* `JSON_STRINGIFY_FN'(ON) -- Build json_stringify() function
+
 * `BUILD_TESTS`(ON) -- Build tests application
 
 # Include files

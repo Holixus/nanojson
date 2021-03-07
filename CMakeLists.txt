@@ -10,6 +10,9 @@ OPTION(JSON_HEX_NUMBERS "Enabled support of 0x integers" OFF)
 OPTION(JSON_PACKED "use packed json item structure" OFF)
 OPTION(JSON_SHORT_NEXT "use short type for next field of jsn_t" OFF)
 
+OPTION(JSON_AUTO_PARSE_FN "Add json_auto_parse() function to the lib" ON)
+OPTION(JSON_STRINGIFY_FN "Add json_stringify() function to the lib" ON)
+
 
 OPTION(HOST_DEBUG "Log to console" OFF)
 

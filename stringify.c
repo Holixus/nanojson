@@ -8,6 +8,8 @@
 
 #include "nano/json.h"
 
+#ifdef JSON_STRINGIFY_FN
+
 /* ------------------------------------------------------------------------ */
 char *string_escape(char *p, char *e, char const *s)
 {
@@ -102,3 +104,5 @@ char *json_stringify(char *out, size_t size, jsn_t *root)
 		json_to_str(out, out + size - 1, root);
 	return out;
 }
+
+#endif /* JSON_STRINGIFY_FN */

@@ -16,6 +16,9 @@ OPTION(JSON_STRINGIFY_FN "Add json_stringify() function to the lib" ON)
 
 OPTION(HOST_DEBUG "Log to console" OFF)
 
+SET(JSON_AUTO_PARSE_POOL_START_SIZE "32" CACHE STRING "Initial jsn_t array size (32)")
+SET(JSON_AUTO_PARSE_POOL_INCREASE "n + 32" CACHE STRING "Increase jsn_t array size formula (n+32)")
+
 
 ADD_DEFINITIONS(-pipe --std=gnu99 -ftabstop=4 -Wno-unused-function)
 ADD_DEFINITIONS(-Wall -Wmissing-declarations -Winit-self -Wswitch-enum -Wundef)

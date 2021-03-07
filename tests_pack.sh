@@ -41,7 +41,7 @@ test_basic()
 
 	local name
 	name=nj_tests_$hx$wi$fl$sn$pk
-	cmake -DJSON_HEX_NUMBERS=$ohx -DJSON_64BITS_INTEGERS=$owi -DJSON_FLOATS=$ofl -DJSON_SHORT_NEXT=$osn -DJSON_PACKED=$opk -DBUILD_TESTS=ON . && make || exit 1
+	cmake -DJSON_HEX_NUMBERS=$ohx -DJSON_64BITS_INTEGERS=$owi -DJSON_FLOATS=$ofl -DJSON_SHORT_NEXT=$osn -DJSON_PACKED=$opk -DBUILD_TESTS=ON -DJSON_AUTO_PARSE_POOL_START_SIZE=4 -DJSON_AUTO_PARSE_POOL_INCREASE=n+4 . && make || exit 1
 	mv ./tests $name
 	echo "./$name || exit 1" >> tests.sh
 	echo

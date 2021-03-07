@@ -376,17 +376,15 @@ int json_parse(jsn_t *pool, size_t size, char *text)
 
 #ifdef JSON_AUTO_PARSE_FN
 
-#define POOL_INCREASE_STEP (32)
-
 /* ------------------------------------------------------------------------ */
 static jsn_t *jsn_realloc(jsn_parser_t *p)
 {
 	if (p->free_node_index >= p->pool_size) {
-		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * (p->pool_size + POOL_INCREASE_STEP));
+		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * JSON_AUTO_PARSE_POOL_INCREASE(p->pool_size));
 		if (!pool)
-			return errno = ENOMEM, NULL;
+			return NULL;
 		p->pool = pool;
-		p->pool_size += POOL_INCREASE_STEP;
+		p->pool_size = JSON_AUTO_PARSE_POOL_INCREASE(p->pool_size);
 	}
 	return jsn_alloc(p);
 }
@@ -398,14 +396,12 @@ static int jsn_free_tail(jsn_parser_t *p)
 	if (p->free_node_index < p->pool_size) {
 		jsn_t *pool = realloc(p->pool, sizeof(jsn_t) * p->free_node_index);
 		if (!pool)
-			return errno = ENOMEM, -1;
+			return -1;
 		p->pool = pool;
 	}
 	return 0;
 }
 
-
-#define START_POOL_SIZE (16)
 
 /* ------------------------------------------------------------------------ */
 jsn_t *json_auto_parse(char *text, char **end)
@@ -414,10 +410,13 @@ jsn_t *json_auto_parse(char *text, char **end)
 		.text = text,
 		.ptr = text,
 		.free_node_index = 0,
-		.pool_size = START_POOL_SIZE,
-		.pool = malloc(START_POOL_SIZE * sizeof(jsn_t)),
+		.pool_size = JSON_AUTO_PARSE_POOL_START_SIZE,
+		.pool = malloc(JSON_AUTO_PARSE_POOL_START_SIZE * sizeof(jsn_t)),
 		.alloc = jsn_realloc
 	};
+
+	if (!p.pool)
+		return NULL;
 
 	int len = basic_parse(&p);
 	if (end)

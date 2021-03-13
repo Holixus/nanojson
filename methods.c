@@ -11,25 +11,28 @@
 /* ------------------------------------------------------------------------ */
 jsn_t *json_item(jsn_t *obj, char const *id)
 {
+	if (obj->type != JS_OBJECT)
+		return errno = ENOTDIR, NULL;
+
 	json_foreach(obj, index)
 		if (!strcmp(id, obj[index].id.string))
 			return obj + index;
 
-	return NULL;
+	return errno = ENOENT, NULL;
 }
 
 
 /* ------------------------------------------------------------------------ */
 jsn_t *json_cell(jsn_t *obj, int index)
 {
-	if (index >= obj->data.length)
-		return NULL;
+	if (obj->type != JS_ARRAY)
+		return errno = ENOTDIR, NULL;
 
 	json_foreach(obj, index)
 		if (index == obj[index].id.number)
 			return obj + index;
 
-	return NULL;
+	return errno = ENOENT, NULL;
 }
 
 

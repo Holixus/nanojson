@@ -12,12 +12,15 @@ OPTION(JSON_SHORT_NEXT "use short type for next field of jsn_t" OFF)
 
 OPTION(JSON_AUTO_PARSE_FN "Add json_auto_parse() function to the lib" ON)
 OPTION(JSON_STRINGIFY_FN "Add json_stringify() function to the lib" ON)
+OPTION(JSON_GET_FN "Add json_get() function to the lib" ON)
 
 
 OPTION(HOST_DEBUG "Log to console" OFF)
 
 SET(JSON_AUTO_PARSE_POOL_START_SIZE "32" CACHE STRING "Initial jsn_t array size (32)")
 SET(JSON_AUTO_PARSE_POOL_INCREASE "n + 32" CACHE STRING "Increase jsn_t array size formula (n+32)")
+
+SET(JSON_MAX_ID_LENGTH "64" CACHE STRING "Maximum identifiers length in path for json_get function")
 
 
 ADD_DEFINITIONS(-pipe --std=gnu99 -ftabstop=4 -Wno-unused-function)

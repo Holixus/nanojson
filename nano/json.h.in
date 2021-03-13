@@ -10,9 +10,12 @@
 
 #cmakedefine JSON_AUTO_PARSE_FN
 #cmakedefine JSON_STRINGIFY_FN
+#cmakedefine JSON_GET_FN
 
 #define JSON_AUTO_PARSE_POOL_START_SIZE  (@JSON_AUTO_PARSE_POOL_START_SIZE@)
 #define JSON_AUTO_PARSE_POOL_INCREASE(n) (@JSON_AUTO_PARSE_POOL_INCREASE@)
+
+#define JSON_MAX_ID_LENGTH               (@JSON_MAX_ID_LENGTH@)
 
 #ifdef JSON_FLOATS
 #include "math.h"
@@ -78,6 +81,9 @@ jsn_t *json_auto_parse(char *text, char **end);
 char *json_stringify(char *outbuf, size_t size, /* <-- */ jsn_t *root);
 #endif
 
+#ifdef JSON_GET_FN
+jsn_t *json_get(jsn_t *obj, char const *path);
+#endif
 
 
 /* ------------------------------------------------------------------------ */
@@ -117,7 +123,7 @@ jsn_t *json_cell(jsn_t *obj, int index);
 /* ------------------------------------------------------------------------ */
 /* internal but may be usefull functions                                    */
 
-int string_unescape(char *s);
+int string_unescape(char *d, char *s);
 
 #ifdef JSON_STRINGIFY_FN
 char *string_escape(char *p, char *e, char const *s);

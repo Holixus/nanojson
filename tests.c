@@ -635,6 +635,92 @@ static int test_json_cell()
 	return 1;
 }
 
+#ifdef JSON_GET_FN
+/* ------------------------------------------------------------------------ */
+static int test_get()
+{
+	char const *sample = 
+	"{"
+		"\"0\":\"value\","
+		"\"key\":555,"
+		"\"array\":["
+			"0,1,2,3,4,5"
+		"],"
+		"\"obj\":{"
+			"\"ololo\":["
+				"\"a\",\"b\",{"
+					"\"key\":123"
+				"}"
+			"]"
+		"}"
+	"}";
+
+	char const *good_pathes[] = {
+		"[\"0\"]", "\"value\"",
+		".key", "555",
+		"[\"key\"]", "555",
+		".array", "[0,1,2,3,4,5]",
+		".array[3]", "3",
+		".obj.ololo[1]", "\"b\"",
+		".obj.ololo[2]", "{\"key\":123}",
+		".obj.ololo[2].key", "123"
+	};
+
+	char const *bad_pathes[] = {
+		".", "asdsa",
+		"1", ".0",
+		"array[\"a\"]",
+		"obj.ololo[-1]",
+		"obj.ololo[200]",
+		"obj.ololo[2].ke"
+	};
+
+	jsn_t json[100];
+	char text[2048];
+	char result[512];
+	strcpy(text, sample);
+	int p = json_parse(json, 100, text);
+	if (p <= 0) {
+		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
+		return 0;
+	}
+
+	json_stringify(result, sizeof result, json);
+	//printf("  %s\n", result);
+
+	printf("  Test BROKEN samples\n");
+	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
+		char const *path = bad_pathes[i];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_get(json, path);
+		if (j) {
+			json_stringify(result, sizeof result, j);
+			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
+			return 0;
+		}
+	}
+
+	printf("  Test CORRECT samples\n");
+	for (int i = 0, n = sizeof good_pathes / sizeof good_pathes[0]; i < n; i += 2) {
+		char const *path = good_pathes[i];
+		char const *exp  = good_pathes[i + 1];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_get(json, path);
+		if (!j) {
+			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
+			return 0;
+		}
+		json_stringify(result, sizeof result, j);
+		if (strcmp(exp, result)) {
+			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
+			return 0;
+		}
+	}
+	return 1;
+}
+#endif
+
+
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
 {
@@ -691,6 +777,10 @@ int main(int argc, char *argv[])
 
 	printf("Test json_string()\n");
 	if (!test_string())
+		return -1;
+
+	printf("Test json_get()\n");
+	if (!test_get())
 		return -1;
 
 	printf("Test json_item()\n");

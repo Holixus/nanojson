@@ -29,6 +29,9 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 
 * `JSON_STRINGIFY_FN`(ON) -- Build json_stringify() function
 
+* `JSON_GET_FN`(ON) -- Build json_get() function
+  * `JSON_MAX_ID_LENGTH`(64) -- Maximum identifiers length in path for json_get function
+
 * `BUILD_TESTS`(ON) -- Build tests application
 
 # Include files
@@ -171,6 +174,48 @@ Returns element of object with `id` or NULL if absent.
 
 Returns element of array with `index` or NULL if absent.
 
+
+## `jsn_t *json_get(jsn_t *node, char const *path)`
+
+* `node` -- array json node to search element
+* `path` -- qualified path of JSON item
+
+Returns element of json with `path` or NULL if absent. If `path` is empty string then returns the `node` value.
+
+```c
+	char const json[] = 
+	"{"
+		"\"0\":\"value\","
+		"\"key\":555,"
+		"\"array\":["
+			"0,1,2,3,4,5"
+		"],"
+		"\"obj\":{"
+			"\"ololo\":["
+				"\"a\",\"b\",{"
+					"\"key\":123"
+				"}"
+			"]"
+		"}"
+	"}";
+
+	jsn_t j[100];
+	int len = json_parse(j, sizeof j / sizeof j[0], json);
+	if (len < 0) {
+		perror("json_parse");
+		// ...
+	}
+
+	char const *z = json_string(json_get(j, "[\"0\"]"));      // "value"
+	int n0 = json_number(json_get(j, ".key"));                // 555
+	int n1 = json_number(json_get(j, "[\"key\"]"));           // 555
+	jsn_t *array = json_get(j, ".array");                     // [0,1,2,3,4,5]
+	int n2 = json_number(json_get(j, ".array[3]"));           // 3
+	char const *z = json_string(json_get(j, ".obj.ololo[1]"); // "\"b\"",
+	jsn_t *ololo2 = json_get(j, ".obj.ololo[2]");             // "{\"key\":123}",
+	int n3 = json_number(json_get(j, ".obj.ololo[2].key");    // "123"
+	// ...
+```
 
 
 ## `char const *json_string(jsn_t *node, char const *missed_value)`

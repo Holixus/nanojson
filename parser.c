@@ -46,6 +46,13 @@ struct jsn_parser {
 
 
 /* ------------------------------------------------------------------------ */
+static int is_alpha_char(int c)
+{
+	return c <= 'Z' ? 'A' <= c : 'a' <= c && c <= 'z';
+}
+
+
+/* ------------------------------------------------------------------------ */
 static int is_id_char(int c)
 {
 	if (c < 'A')
@@ -65,6 +72,7 @@ static int after_space(char **p)
 
 	return *(*p = s);
 }
+
 
 
 /* ------------------------------------------------------------------------ */
@@ -146,9 +154,8 @@ static int hextonibble(char digit)
 
 
 /* ------------------------------------------------------------------------ */
-int string_unescape(char *s)
+int string_unescape(char *d, char *s)
 {
-	char *d = s;
 	for (; *s && *s != '"'; ++s) {
 		if (*s == '\\') {
 			switch (*++s) {
@@ -338,9 +345,9 @@ static int basic_parse(jsn_parser_t *p)
 	for (int i = 0; i < p->free_node_index; ++i) {
 		jsn_t *node = p->pool + i;
 		if (node->type == JS_STRING)
-			string_unescape(node->data.string);
+			string_unescape(node->data.string, node->data.string);
 		if (node->id_type == JS_STRING)
-			string_unescape(node->id.string);
+			string_unescape(node->id.string, node->id.string);
 	}
 
 	return p->free_node_index; // return number of parsed js nodes (>0)
@@ -432,3 +439,99 @@ jsn_t *json_auto_parse(char *text, char **end)
 }
 
 #endif /* JSON_AUTO_PARSE */
+
+#ifdef JSON_GET_FN
+
+static int match_id(char **p, char *id)
+{
+	if (!is_alpha_char(**p))
+		return 0;
+
+	char *s = *p;
+	do {
+		++s;
+	} while (is_id_char(*s));
+
+	size_t len = (unsigned)(s - *p);
+	if (len > JSON_MAX_ID_LENGTH)
+		return 0;
+
+	memcpy(id, *p, len);
+	id[len] = 0;
+	*p = s;
+	return 1;
+}
+
+static int match_inum(char **p, int *num)
+{
+	if (**p < '0' || '9' < **p)
+		return 0;
+
+	int v = 0;
+	char *s = *p;
+	do {
+		v = 10 * v + (*s - '0');
+		++s;
+	} while (is_id_char(*s));
+	*num = v;
+	*p = s;
+	return 1;
+}
+
+/* ------------------------------------------------------------------------ */
+jsn_t *json_get(jsn_t *obj, char const *path)
+{
+/*
+ID       [a-zA-Z] [a-zA-Z0-9_]*
+INUM     [0-9]+
+INDEX    '[' ( INUM | string ) ']'
+path     ( '.' ID | INDEX ) )*
+*/
+	char *p = (char *)path;
+
+	after_space(&p);
+	while (*p && obj) {
+		switch (*p) {
+		case '.': {
+				char id[JSON_MAX_ID_LENGTH];
+				++p;
+				if (!match_id(&p, id))
+					return errno = EINVAL, NULL;
+
+				obj = json_item(obj, id);
+				continue;
+			}
+		case '[': {
+				int i;
+				++p;
+				if (match_inum(&p, &i)) {
+					if (!match_char(&p, ']'))
+						return errno = EINVAL, NULL;
+
+					obj = json_cell(obj, i);
+					continue;
+				} else {
+					char *s;
+					if (match_string(&p, &s)) {
+						if (!match_char(&p, ']'))
+							return errno = EINVAL, NULL;
+
+						char *str = (char *)malloc(p - s);
+						string_unescape(str, s);
+						obj = json_item(obj, str);
+						free(str);
+						continue;
+					}
+				}
+				return errno = EINVAL, NULL;
+			}
+		default:
+			return errno = EINVAL, NULL;
+		}
+		after_space(&p);
+	}
+
+	return obj;
+}
+
+#endif /* JSON_GET_FN */

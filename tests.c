@@ -499,6 +499,141 @@ static int test_string()
 	return 1;
 }
 
+/* ------------------------------------------------------------------------ */
+static int test_json_item()
+{
+	char const *sample = 
+	"{"
+		"\"0\":\"value\","
+		"\"key\":555,"
+		"\"array\":["
+			"0,1,2,3,4,5"
+		"],"
+		"\"obj\":{"
+			"\"ololo\":["
+				"\"a\",\"b\",{"
+					"\"key\":123"
+				"}"
+			"]"
+		"}"
+	"}";
+
+	char const *good_pathes[] = {
+		"0", "\"value\"",
+		"key", "555",
+		"array", "[0,1,2,3,4,5]",
+		"obj", "{\"ololo\":[\"a\",\"b\",{\"key\":123}]}"
+	};
+
+	char const *bad_pathes[] = {
+		"asdsa",
+		""
+	};
+
+	jsn_t json[100];
+	char text[2048];
+	char result[512];
+	strcpy(text, sample);
+	int p = json_parse(json, 100, text);
+	if (p <= 0) {
+		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
+		return 0;
+	}
+
+	json_stringify(result, sizeof result, json);
+	//printf("  %s\n", result);
+
+	printf("  Test BROKEN samples\n");
+	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
+		char const *path = bad_pathes[i];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_item(json, path);
+		if (j) {
+			json_stringify(result, sizeof result, j);
+			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
+			return 0;
+		}
+	}
+
+	printf("  Test CORRECT samples\n");
+	for (int i = 0, n = sizeof good_pathes / sizeof good_pathes[0]; i < n; i += 2) {
+		char const *path = good_pathes[i];
+		char const *exp  = good_pathes[i + 1];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_item(json, path);
+		if (!j) {
+			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
+			return 0;
+		}
+		json_stringify(result, sizeof result, j);
+		if (strcmp(exp, result)) {
+			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* ------------------------------------------------------------------------ */
+static int test_json_cell()
+{
+	char const *sample = 
+	"[0,1,2]";
+
+	char const *good_pathes[] = {
+		"0", "0",
+		"1", "1",
+		"2", "2"
+	};
+
+	char const *bad_pathes[] = {
+		"-1",
+		"3"
+	};
+
+	jsn_t json[100];
+	char text[2048];
+	char result[512];
+	strcpy(text, sample);
+	int p = json_parse(json, 100, text);
+	if (p <= 0) {
+		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
+		return 0;
+	}
+
+	json_stringify(result, sizeof result, json);
+	//printf("  %s\n", result);
+
+	printf("  Test BROKEN samples\n");
+	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
+		char const *path = bad_pathes[i];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_cell(json, atoi(path));
+		if (j) {
+			json_stringify(result, sizeof result, j);
+			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
+			return 0;
+		}
+	}
+
+	printf("  Test CORRECT samples\n");
+	for (int i = 0, n = sizeof good_pathes / sizeof good_pathes[0]; i < n; i += 2) {
+		char const *path = good_pathes[i];
+		char const *exp  = good_pathes[i + 1];
+		//printf("    <<<%s>>>...\n", path);
+		jsn_t *j = json_cell(json, atoi(path));
+		if (!j) {
+			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
+			return 0;
+		}
+		json_stringify(result, sizeof result, j);
+		if (strcmp(exp, result)) {
+			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
+			return 0;
+		}
+	}
+	return 1;
+}
 
 /* ------------------------------------------------------------------------ */
 int main(int argc, char *argv[])
@@ -558,19 +693,13 @@ int main(int argc, char *argv[])
 	if (!test_string())
 		return -1;
 
-/*
-	test_gets();
+	printf("Test json_item()\n");
+	if (!test_json_item())
+		return -1;
 
-	if (argc < 2)
-		return 0;
+	printf("Test json_cell()\n");
+	if (!test_json_cell())
+		return -1;
 
-	jsn_t json[100];
-	if (json_parse(json, 100, argv[1]) < 0) {
-		perror("json parse");
-		return 1;
-	}
-	printf("ok\n");
-	char text[4096];
-	puts(json_stringify(text, sizeof text, json));*/
 	return 0;
 }

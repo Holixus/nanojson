@@ -28,9 +28,9 @@ jsn_t *json_cell(jsn_t *obj, int index)
 	if (obj->type != JS_ARRAY)
 		return errno = ENOTDIR, NULL;
 
-	json_foreach(obj, index)
-		if (index == obj[index].id.number)
-			return obj + index;
+	json_foreach(obj, i)
+		if (index == obj[i].id.number)
+			return obj + i;
 
 	return errno = ENOENT, NULL;
 }

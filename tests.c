@@ -202,7 +202,7 @@ static int test_auto_ok(char const *source, char const *expected)
 static int test_json_parse()
 {
 	printf("  Test BROKEN samples\n");
-	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 2) {
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1) {
 		if (!test_fail(fails[i]))
 			return 0;
 	}
@@ -220,7 +220,7 @@ static int test_json_parse()
 static int test_json_auto_parse()
 {
 	printf("  Test BROKEN samples\n");
-	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 2) {
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1) {
 		if (!test_auto_fail(fails[i]))
 			return 0;
 	}

@@ -37,7 +37,7 @@ A small footprint(code and memory) simple [JSON](https://www.rfc-editor.org/rfc/
 # Include files
 
 ```c
-#include "nano/json.h"
+#include <nano/json.h>
 ```
 
 # Nodes types
@@ -166,6 +166,11 @@ Return pointer to output buffer.
 
 Returns element of object with `id` or NULL if absent.
 
+### Errors
+
+* `ENOENT` there is no element with `id` value.
+* `ENOTDIR` the `node` is not object type.
+
 
 ## `jsn_t *json_cell(jsn_t *node, int index)`
 
@@ -174,6 +179,11 @@ Returns element of object with `id` or NULL if absent.
 
 Returns element of array with `index` or NULL if absent.
 
+### Errors
+
+* `ENOENT` there is no element with `index` value.
+* `ENOTDIR` the `node` is not array type.
+
 
 ## `jsn_t *json_get(jsn_t *node, char const *path)`
 
@@ -181,6 +191,14 @@ Returns element of array with `index` or NULL if absent.
 * `path` -- qualified path of JSON item
 
 Returns element of json with `path` or NULL if absent. If `path` is empty string then returns the `node` value.
+
+### Errors
+
+* `ENOENT` there is no element in `path`.
+* `ENOTDIR` wrong node type in path.
+* `EINVAL` impossible to parse passed `path`.
+
+### Sample
 
 ```c
 	char const json[] = 

@@ -138,7 +138,16 @@ char *float2str(char *p, char *e, double f);
 
 
 #ifdef JSON_64BITS_INTEGERS
-#define JSN_NUMBER_FORMAT "%li"
+#if LLONG_MAX == INT64_MAX
+	#define JSN_NUMBER_FORMAT "%lli"
+#else
+#if LONG_MAX == INT64_MAX
+	#define JSN_NUMBER_FORMAT "%li"
+#else
+	#error "impossible to choose of 64 bits number format function"
+#endif
+#endif
+
 #else
 #define JSN_NUMBER_FORMAT "%d"
 #endif

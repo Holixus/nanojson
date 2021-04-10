@@ -9,8 +9,7 @@ test_basic()
 {
 	echo "------------------------------------------------------------------------------"
 	echo "run test $*"
-	cmake $* -DBUILD_TESTS=ON -DJSON_AUTO_PARSE_POOL_START_SIZE=4 -DJSON_AUTO_PARSE_POOL_INCREASE=n+4 . && make && ./tests
-	echo
+	cmake $* -DBUILD_TESTS=ON -DJSON_AUTO_PARSE_POOL_START_SIZE=4 -DJSON_AUTO_PARSE_POOL_INCREASE=n+4 . && make && ./tests && echo
 }
 
 test_hex()

@@ -27,6 +27,8 @@ enum {
 } nj_type_t;
 
 
+#include "limits.h"
+
 #ifdef JSON_64BITS_INTEGERS
 typedef int64_t jsn_number_t;
 #else

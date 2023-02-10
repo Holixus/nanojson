@@ -6,6 +6,7 @@
 
 #include "nano/json.h"
 
+enum { T_FAIL = -1, T_OK = 0 };
 
 /* ------------------------------------------------------------------------ */
 static char *fails[] = {
@@ -30,7 +31,7 @@ static int test_fail(char const *source)
 	if (p <= 0) {
 		free(text);
 		//printf("    [OK]\n");
-		return 1;
+		return T_OK;
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
@@ -40,7 +41,7 @@ static int test_fail(char const *source)
 	string_escape(src, src + length - 5, source);
 	printf("    <<<%s>>> -> <%s>[%d]\n but is should be FAILED\n", src, result, p);
 	free(result);
-	return 0;
+	return T_FAIL;
 }
 
 
@@ -52,7 +53,7 @@ static int test_auto_fail(char const *source)
 	if (!json) {
 		free(text);
 		//printf("    [OK]\n");
-		return 1;
+		return T_OK;
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
@@ -63,7 +64,7 @@ static int test_auto_fail(char const *source)
 	printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", src, result);
 	free(result);
 	free(json);
-	return 0;
+	return T_FAIL;
 }
 
 
@@ -153,7 +154,7 @@ static int test_ok(char const *source, char const *expected)
 	if (p <= 0) {
 		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", source, -p, text - p);
 		free(text);
-		return 0;
+		return T_FAIL;
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
@@ -162,12 +163,12 @@ static int test_ok(char const *source, char const *expected)
 	if (!strcmp(result, expected)) {
 		//printf("    [OK]\n");
 		free(result);
-		return 1;
+		return T_OK;
 	} else {
 		printf("    <<<%s>>> -> <%s>[%d]\n but expected <%s> [FAILED] // serializing\n", source, result, p, expected);
 	}
 	free(result);
-	return 0;
+	return T_FAIL;
 }
 
 
@@ -179,7 +180,7 @@ static int test_auto_ok(char const *source, char const *expected)
 	if (!json) {
 		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", source, (int)(end - text), end);
 		free(text);
-		return 0;
+		return T_FAIL;
 	}
 	size_t length = strlen(source) * 3 + 10;
 	char *result = malloc(length);
@@ -189,48 +190,44 @@ static int test_auto_ok(char const *source, char const *expected)
 	if (!strcmp(result, expected)) {
 		//printf("    [OK]\n");
 		free(result);
-		return 1;
+		return T_OK;
 	} else {
 		printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", source, result, expected);
 	}
 	free(result);
-	return 0;
+	return T_FAIL;
 }
 
 
 /* ------------------------------------------------------------------------ */
 static int test_json_parse()
 {
+	int fail = T_OK;
 	printf("  Test BROKEN samples\n");
-	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1) {
-		if (!test_fail(fails[i]))
-			return 0;
-	}
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1)
+		fail |= test_fail(fails[i]);
 
 	printf("  Test CORRECT samples\n");
-	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2) {
-		if (!test_ok(good[i], good[i + 1]))
-			return 0;
-	}
-	return 1;
+	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2)
+		fail |= test_ok(good[i], good[i + 1]);
+
+	return fail;
 }
 
 
 /* ------------------------------------------------------------------------ */
 static int test_json_auto_parse()
 {
+	int fail = T_OK;
 	printf("  Test BROKEN samples\n");
-	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1) {
-		if (!test_auto_fail(fails[i]))
-			return 0;
-	}
+	for (int i = 0, n = sizeof fails / sizeof fails[0]; i < n; i += 1)
+		fail |= test_auto_fail(fails[i]);
 
 	printf("  Test CORRECT samples\n");
-	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2) {
-		if (!test_auto_ok(good[i], good[i + 1]))
-			return 0;
-	}
-	return 1;
+	for (int i = 0, n = sizeof good / sizeof good[0]; i < n; i += 2)
+		fail |= test_auto_ok(good[i], good[i + 1]);
+
+	return fail;
 }
 
 
@@ -252,7 +249,7 @@ static int test_gets()
 	if (len < 0) {
 		perror("json_obj_scan parse");
 		free(text);
-		return 1;
+		return T_FAIL;
 	}
 
 	printf("parsed %d nodes\n", len);
@@ -271,7 +268,7 @@ static int test_gets()
 		++i;
 	}
 	free(text);
-	return 0;
+	return T_OK;
 }
 
 
@@ -305,14 +302,17 @@ static int test_boolean()
 		,{ "{}", 1 }
 	};
 
+	int fail = T_OK;
 	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
 		char text[256];
 		char const *source = samples[i].text;
 		jsn_t json[5];
 		strcpy(text, source);
 		int p = json_parse(json, sizeof json / sizeof json[0], text);
-		if (p <= 0)
-			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+		if (p <= 0) {
+			printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
+			fail |= T_FAIL;
+		}
 
 		int result = json_boolean(json, 0);
 		int expected = samples[i].number;
@@ -322,10 +322,10 @@ static int test_boolean()
 		}
 
 		printf("<<<%s>>> -> %d but expected %d [FAILED] // json_number\n", source, result, expected);
-		return 0;
+		fail |= T_FAIL;
 	}
 
-	return 1;
+	return fail;
 }
 
 
@@ -363,14 +363,17 @@ static int test_number()
 		,{ "{}", 0 }
 	};
 
+	int fail = T_OK;
 	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
 		char text[256];
 		char const *source = samples[i].text;
 		jsn_t json[5];
 		strcpy(text, source);
 		int p = json_parse(json, sizeof json / sizeof json[0], text);
-		if (p <= 0)
-			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+		if (p <= 0) {
+			printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
+			fail |= T_FAIL;
+		}
 
 		int result = json_number(json, 0);
 		int expected = samples[i].number;
@@ -380,10 +383,10 @@ static int test_number()
 		}
 
 		printf("<<<%s>>> -> %d but expected %d [FAILED] // json_number\n", source, result, expected);
-		return 0;
+		fail |= T_FAIL;
 	}
 
-	return 1;
+	return fail;
 }
 
 
@@ -417,14 +420,17 @@ static int test_float()
 		,{ "{}", 0.d }
 	};
 
+	int fail = T_OK;
 	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
 		char text[256];
 		char const *source = samples[i].text;
 		jsn_t json[5];
 		strcpy(text, source);
 		int p = json_parse(json, sizeof json / sizeof json[0], text);
-		if (p <= 0)
-			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+		if (p <= 0) {
+			printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
+			fail |= T_FAIL;
+		}
 
 		double result = json_float(json, 0.d);
 		double expected = samples[i].floating;
@@ -434,10 +440,10 @@ static int test_float()
 		}
 
 		printf("<<<%s>>> -> %f but expected %f [FAILED] // json_float\n", source, result, expected);
-		return 0;
+		fail |= T_FAIL;
 	}
 
-	return 1;
+	return fail;
 }
 #endif
 
@@ -476,14 +482,17 @@ static int test_string()
 		,{ "{}",  "[object Object]" }
 	};
 
+	int fail = T_OK;
 	for (int i = 0, n = sizeof samples / sizeof samples[0]; i < n; ++i) {
 		char text[256];
 		char const *source = samples[i].text;
 		jsn_t json[5];
 		strcpy(text, source);
 		int p = json_parse(json, sizeof json / sizeof json[0], text);
-		if (p <= 0)
-			return printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p), 0;
+		if (p <= 0) {
+			printf("<<<%s>>> [FAILED] // parsing %d\n", source, -p);
+			fail |= T_FAIL;
+		}
 
 		char const *result = json_string(json, 0);
 		char const *expected = samples[i].string;
@@ -493,16 +502,16 @@ static int test_string()
 		}
 
 		printf("<<<%s>>> -> \"%s\" but expected \"%s\" [FAILED] // json_string\n", source, result, expected);
-		return 0;
+		fail |= T_FAIL;
 	}
 
-	return 1;
+	return fail;
 }
 
 /* ------------------------------------------------------------------------ */
 static int test_json_item()
 {
-	char const *sample = 
+	char const *sample =
 	"{"
 		"\"0\":\"value\","
 		"\"key\":555,"
@@ -537,12 +546,13 @@ static int test_json_item()
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
 		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
-		return 0;
+		/* return 0; */
 	}
 
 	json_stringify(result, sizeof result, json);
 	//printf("  %s\n", result);
 
+	int fail = T_OK;
 	printf("  Test BROKEN samples\n");
 	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
 		char const *path = bad_pathes[i];
@@ -551,7 +561,7 @@ static int test_json_item()
 		if (j) {
 			json_stringify(result, sizeof result, j);
 			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
 
@@ -563,21 +573,21 @@ static int test_json_item()
 		jsn_t *j = json_item(json, path);
 		if (!j) {
 			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
-			return 0;
+			fail |= T_FAIL;
 		}
 		json_stringify(result, sizeof result, j);
 		if (strcmp(exp, result)) {
 			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
-	return 1;
+	return fail;
 }
 
 /* ------------------------------------------------------------------------ */
 static int test_json_cell()
 {
-	char const *sample = 
+	char const *sample =
 	"[0,1,2]";
 
 	char const *good_pathes[] = {
@@ -598,13 +608,13 @@ static int test_json_cell()
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
 		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
-		return 0;
 	}
 
 	json_stringify(result, sizeof result, json);
 	//printf("  %s\n", result);
 
 	printf("  Test BROKEN samples\n");
+	int fail = T_OK;
 	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
 		char const *path = bad_pathes[i];
 		//printf("    <<<%s>>>...\n", path);
@@ -612,7 +622,7 @@ static int test_json_cell()
 		if (j) {
 			json_stringify(result, sizeof result, j);
 			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
 
@@ -624,22 +634,22 @@ static int test_json_cell()
 		jsn_t *j = json_cell(json, atoi(path));
 		if (!j) {
 			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
-			return 0;
+			fail |= T_FAIL;
 		}
 		json_stringify(result, sizeof result, j);
 		if (strcmp(exp, result)) {
 			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
-	return 1;
+	return fail;
 }
 
 #ifdef JSON_GET_FN
 /* ------------------------------------------------------------------------ */
 static int test_get()
 {
-	char const *sample = 
+	char const *sample =
 	"{"
 		"\"0\":\"value\","
 		"\"key\":555,"
@@ -682,13 +692,13 @@ static int test_get()
 	int p = json_parse(json, 100, text);
 	if (p <= 0) {
 		printf("    <<<%s>>> [FAILED] // parsing %d(%m) '%s'\n", sample, -p, text - p);
-		return 0;
 	}
 
 	json_stringify(result, sizeof result, json);
 	//printf("  %s\n", result);
 
 	printf("  Test BROKEN samples\n");
+	int fail = T_OK;
 	for (int i = 0, n = sizeof bad_pathes / sizeof bad_pathes[0]; i < n; i += 1) {
 		char const *path = bad_pathes[i];
 		//printf("    <<<%s>>>...\n", path);
@@ -696,7 +706,7 @@ static int test_get()
 		if (j) {
 			json_stringify(result, sizeof result, j);
 			printf("    <<<%s>>> -> <%s>\n but is should be FAILED\n", path, result);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
 
@@ -708,15 +718,15 @@ static int test_get()
 		jsn_t *j = json_get(json, path);
 		if (!j) {
 			printf("    <<<%s>>> // json_get '%m' [FAILED]\n", path);
-			return 0;
+			fail |= T_FAIL;
 		}
 		json_stringify(result, sizeof result, j);
 		if (strcmp(exp, result)) {
 			printf("    <<<%s>>> -> <%s>\n but expected <%s> [FAILED] // serializing\n", path, result, exp);
-			return 0;
+			fail |= T_FAIL;
 		}
 	}
-	return 1;
+	return fail;
 }
 #endif
 
@@ -754,42 +764,33 @@ int main(int argc, char *argv[])
 		" | sizeof jsn_t: %u\n", (unsigned int)sizeof (jsn_t));
 
 	printf("Test json_parse()\n");
-	if (!test_json_parse())
-		return -1;
+	test_json_parse();
 
 	printf("Test json_auto_parse()\n");
-	if (!test_json_auto_parse())
-		return -1;
+	test_json_auto_parse();
 
 	printf("Test json_number()\n");
-	if (!test_number())
-		return -1;
+	test_number();
 
 	printf("Test json_boolean()\n");
-	if (!test_boolean())
-		return -1;
+	test_boolean();
 
 #ifdef JSON_FLOATS
 	printf("Test json_float()\n");
-	if (!test_float())
-		return -1;
+	test_float();
 #endif
 
 	printf("Test json_string()\n");
-	if (!test_string())
-		return -1;
+	test_string();
 
 	printf("Test json_get()\n");
-	if (!test_get())
-		return -1;
+	test_get();
 
 	printf("Test json_item()\n");
-	if (!test_json_item())
-		return -1;
+	test_json_item();
 
 	printf("Test json_cell()\n");
-	if (!test_json_cell())
-		return -1;
+	test_json_cell();
 
 	return 0;
 }

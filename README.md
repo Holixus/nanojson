@@ -48,6 +48,45 @@ enum {
 	JS_UNDEFINED=1, JS_NULL, JS_BOOLEAN, JS_NUMBER, JS_FLOAT, JS_STRING, JS_ARRAY, JS_OBJECT
 } nj_type_t;
 ```
+# jsn_t
+
+```c
+#ifdef JSON_64BITS_INTEGERS
+typedef int64_t jsn_number_t;
+#else
+typedef int32_t jsn_number_t;
+#endif
+
+#ifdef JSON_SHORT_NEXT
+typedef short jsn_next_t;
+#else
+typedef int jsn_next_t;
+#endif
+
+
+typedef
+struct jsn {
+	union {
+		char *string;        /* string id of the node in the parent object    */
+		unsigned int number; /* integer index of the node in the parent array */
+	} id;
+	union {
+		jsn_number_t number;
+		char *string;
+		jsn_next_t length;   /* number of object/array elements */
+#ifdef JSON_FLOATS
+		double floating;
+#endif
+	} data;
+	jsn_next_t next;         /* index offset to next sibling node (0 - parent node offset) */
+	char id_type;            /* type of id. JS_NUMBER(for array) or JS_STRING(for object)  */
+	char type;               /* type of data (nj_type_t)                                   */
+}
+#ifdef JSON_PACKED
+__attribute__((packed))
+#endif
+jsn_t;
+```
 
 
 # Functions
